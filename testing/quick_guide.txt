@@ -1,0 +1,22 @@
+python3 venv .
+pip install Flask
+pip install kafka-python
+
+export FLASK_APP=name_of_python_file
+flask run
+
+#START KAFKA INSTANCE:
+#Go to kafka folder
+bin/zookeeper-server-start.sh config/zookeeper.properties
+#A new terminal, same folder
+bin/kafka-server-start.sh config/server.properties
+
+#Start Kafka topic:
+bin/kafka-topics.sh --create --topic topic-name --bootstrap-server localhost:9092
+
+#Listen to a topic on terminal:
+bin/kafka-console-consumer.sh --topic topicname --from-beginning --bootstrap-server localhost:9092
+
+#Close/teardown:
+Ctrl+C for all processes
+rm -rf /tmp/kafka-logs /tmp/zookeeper
