@@ -1,3 +1,21 @@
+Using the docker-compose and sending/receiving messages
+between two Python apps:
+
+Go to where the docke-compose.yml is:
+Run:
+docker-compose up -d
+
+Open browser:
+localhost:5000
+Enter some text to the field, and press "Send".
+
+Open a terminal window and run:
+docker logs -t kafka-consumer-1
+
+You should see the logs of the container that receives
+the messages. The messages should be printed there.
+
+----------------------------
 python3 venv .
 pip install Flask
 pip install kafka-python

@@ -1,13 +1,12 @@
 from flask import Flask
-from flask.templating import render_template
 from kafka import KafkaConsumer
 
 app = Flask(__name__)
 
 TOPIC_NAME = "messages"
-KAFKA_PORT = 9092
-KAFKA_ADDRESS = "127.0.0.1"
-KAFKA_GROUP = "test_group"
+KAFKA_PORT = 29092
+KAFKA_ADDRESS = "kafka-kafka-1" #"127.0.0.1"
+KAFKA_GROUP = "test-consumer-group"
 
 consumer = KafkaConsumer(
   TOPIC_NAME,
@@ -18,9 +17,14 @@ consumer = KafkaConsumer(
   value_deserializer = lambda x: x.decode('utf-8')
 )
 
+if consumer.bootstrap_connected():
+  print("Consumer successfully connected!", flush=True)
+else:
+  print("Consumer failed to connect!", flush=True)
+
 for message in consumer:
   message = message.value
-  print(message)
+  print(f"MESSAGE: {message}", flush=True)
 
 @app.route("/")
 def main_page():
