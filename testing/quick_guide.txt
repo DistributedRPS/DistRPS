@@ -14,6 +14,12 @@ docker logs -t kafka-consumer-1
 
 You should see the logs of the container that receives
 the messages. The messages should be printed there.
+----------------------------
+
+KAFKA_ADVERTISED_LISTENERS -> Kafka broker returns these
+addresses to a client asking to connect. So the address the
+client originally makes contact to (the broker), is not necessarily
+the same that the given listener has.
 
 ----------------------------
 python3 venv .
