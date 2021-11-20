@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from kafka import KafkaProducer
-from kafka.admin import KafkaAdminClient, NewTopic
-from kafka.errors import KafkaError
+from kafka.errors import NoBrokersAvailable
+import time
 
 app = Flask(__name__)
 
@@ -18,9 +18,16 @@ KAFKA_ADDRESS = "kafka-kafka-1" #"127.0.0.1"
 # topics.append(NewTopic(TOPIC_NAME, num_partitions=1, replication_factor=1))
 # adminClient.create_topics(new_topics=topics, validate_only=False)
 
-producer = KafkaProducer(
-  bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"]
-)
+producer = None
+
+while producer == None:
+  try:
+    producer = KafkaProducer(
+      bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"]
+    )
+  except NoBrokersAvailable:
+    print("No brokers available, retrying...", flush=True)
+    time.sleep(1)
 
 @app.route("/")
 def main_page():
