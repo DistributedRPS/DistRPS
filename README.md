@@ -7,7 +7,9 @@ A distributed Rock, Paper &amp; Scissors game
 ### With Docker
 
 There is a docker-compose.yml -file located in the "kafka" -folder of the repository.
-In the folder run: docker-compose up -d
+In the folder run:
+
+     docker-compose up -d
 
 That should start all the containers connected to a default Docker network so that they are visible to each other.
 
@@ -21,18 +23,26 @@ You might need to install the dependencies listed in the requirements.txt -folde
 #### Client
 
 Go to the client -folder
-run: python3 client_main.py
+run: 
+     
+     python3 client_main.py
 
 #### Server
 
 Go to the server -folder
-run: export FLASK_APP=server_main.py
+run: 
+
+     export FLASK_APP=server_main.py
+
      flask run
 
 #### Load balancer
 
 Go to the load_balancer -folder
-run: export FLASK_APP=load_balancer.py
+run: 
+
+     export FLASK_APP=load_balancer.py
+
      flask run
 
 #### Kafka node and kafka zookeeper
