@@ -33,7 +33,7 @@ Go to the server -folder
 run: 
 
      export FLASK_APP=server_main.py
-
+    
      flask run
 
 #### Load balancer
@@ -42,7 +42,7 @@ Go to the load_balancer -folder
 run: 
 
      export FLASK_APP=load_balancer.py
-
+    
      flask run
 
 #### Kafka node and kafka zookeeper
@@ -55,3 +55,26 @@ Go to each components folder, where the corresponding Dockerfile is located and 
 
      docker build -t <desired name for image> .
 
+
+
+## Run game logic example
+
+There are two scripts: client_game.py in client folder and server_game.py in server folder.
+
+```
+docker cp path container_name:/app
+```
+
+Use this copy command to copy the scripts into the containers.
+
+To go into the container command line:
+
+```
+docker exec -it container_name /bin/bash
+```
+
+Run the scripts in different terminal in any nodes with python environment. (consumer or producer, it doesn't matter. Anyway they are different processes.)
+
+First run the server. After several seconds (to wait for it to set up), run the two clients.
+
+Right now it doesn't have any fault tolerance, but the basic logic is done. 3 rounds, 2 players.
