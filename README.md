@@ -51,6 +51,7 @@ See kafka documentation
 
 ### Creating local images
 
-Go to each components folder, where the corresponding Dockerfile is located and run: docker build -t <desired name for image> .
-(The dot at the end is part of the command!
+Go to each components folder, where the corresponding Dockerfile is located and run:
+
+     docker build -t <desired name for image> .
 
