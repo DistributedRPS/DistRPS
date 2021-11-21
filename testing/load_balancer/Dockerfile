@@ -8,4 +8,5 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-CMD [ "python3", "client_main.py", "-production"]
+ENV FLASK_APP=load_balancer
+CMD [ "python3", "-m", "flask", "run", "--host=0.0.0.0" ]

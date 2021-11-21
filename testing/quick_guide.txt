@@ -22,7 +22,7 @@ client originally makes contact to (the broker), is not necessarily
 the same that the given listener has.
 
 ----------------------------
-python3 venv .
+python3 -m venv .
 pip install Flask
 pip install kafka-python
 

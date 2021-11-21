@@ -43,9 +43,15 @@ services:
     image: consumer:latest
     depends_on:
       - init-kafka
+      - load_balancer
 
   producer:
     image: producer:latest
+    depends_on:
+      - init-kafka
+
+  load_balancer:
+    image: load_balancer:latest
     ports:
       - "5000:5000"
     depends_on:
