@@ -67,7 +67,7 @@ def join_tournament():
 #   1-player input
 def game_loop():
     while True:
-        msg = consumer.poll(timeout_ms=100, max_records=1)
+        msg = consumer.poll(timeout_ms=100000, max_records=1)
         if msg == {} or None:
             continue
         #print(f'***LOG: {msg}', flush=True)
