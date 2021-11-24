@@ -19,6 +19,18 @@ If the docker-compose.yml fails to start the containers, make sure you have loca
 
 Make sure you have python3 installed.
 You might need to install the dependencies listed in the requirements.txt -folder.
+If you have trouble with any of these Python commands, you might need to activate the Virtual environment (venv) for the project in question.
+The venv is activated at the root of the node folder (for example, in the 'client' -folder) by running:
+
+     . bin/activate
+     
+After activating the venv, when you are done with running the apps, you can deactivate it by simply running:
+
+     deactivate
+     
+To install the dependencies, run:
+     
+     pip3 install -r requirements.txt
 
 #### Client
 
