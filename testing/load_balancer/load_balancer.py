@@ -1,28 +1,23 @@
 from flask import Flask
-from kafka import KafkaAdminClient
-import time
+import sys
 
 app = Flask(__name__)
 
 # This kafka address and port should come from configuration
-KAFKA_ADDRESS = "kafka-kafka-1"
-KAFKA_PORT = 29092
+KAFKA_ADDRESS = "127.0.0.1"
+KAFKA_PORT = 9092
 
 clients = {}
 servers = {}
 kafka_topics = [ "messages" ]
 
-retries = 0
-kafkaAdmin = None
-while kafkaAdmin == None and retries <= 10:
-  try:
-    kafkaAdmin = KafkaAdminClient()
-  except:
-    print("Unable to start kafka admin, retrying...", flush=True)
-    time.sleep(1)
-    retries += 1
-    if retries > 10:
-      print('Unable to start kafka admin after 10 retries, giving up..', flush=True)
+# Get commandline arguments
+args = sys.argv[1:]
+if args and args[0] == "-docker":
+  KAFKA_ADDRESS = "kafka-kafka-1"
+  KAFKA_PORT = 29092
+elif args and args[0] == "-vm":
+  KAFKA_ADDRESS = "<address of vm running kafka instance>"
 
 def add_client(client_address, client_id):
   clients[f"{client_id}"] = client_address
@@ -39,8 +34,16 @@ def add_kafka_topic(topic_name):
 @app.route("/client/register")
 def client_register():
   # implement some algorithm to pick a suitable topic to return
-  return kafka_topics[0]
+  return {
+    "kafka_topic": kafka_topics[0],
+    "kafka_address": KAFKA_ADDRESS,
+    "kafka_port": KAFKA_PORT,
+  }
 
 @app.route("/server/register")
 def server_register():
-  return "server registration"
+  return {
+    "kafka_topic": kafka_topics[0],
+    "kafka_address": KAFKA_ADDRESS,
+    "kafka_port": KAFKA_PORT,
+  }

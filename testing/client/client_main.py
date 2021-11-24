@@ -8,22 +8,36 @@ import sys
 # being hardcoded here
 LOAD_BALANCER_ADDRESS = "127.0.0.1" # "kafka-load_balancer-1"
 TOPIC_NAME = "messages"
-KAFKA_PORT = 29092
+KAFKA_PORT = 9092
 KAFKA_ADDRESS = "kafka-kafka-1" #"127.0.0.1"
 KAFKA_GROUP = "test-consumer-group"
 
 # Get commandline arguments
 args = sys.argv[1:]
-if args and args[0] == "-production":
+if args and args[0] == "-docker":
   LOAD_BALANCER_ADDRESS = "kafka-load_balancer-1"
+  KAFKA_PORT = 29092
+elif args and args[0] == "-vm":
+  LOAD_BALANCER_ADDRESS = "<address of vm running load balancer>"
 
 print(f"Using {LOAD_BALANCER_ADDRESS} as load balancer address.", flush=True)
 
 try:
   print("Fetching a Kafka topic to connect to...", flush=True)
-  received_topic_name = requests.get(f"http://{LOAD_BALANCER_ADDRESS}:5000").text
-  print(f"Received topic name: {received_topic_name}", flush=True)
-  TOPIC_NAME = received_topic_name
+  response = requests.get(f"http://{LOAD_BALANCER_ADDRESS}:5000/client/register")
+
+  data = None
+  try:
+    data = response.json()
+    TOPIC_NAME = data["kafka_topic"]
+    KAFKA_ADDRESS = data["kafka_address"]
+    KAFKA_PORT = data["kafka_port"]
+    print(f"Received topic name: {TOPIC_NAME}", flush=True)
+    print(f"Received kafka address: {KAFKA_ADDRESS}", flush=True)
+    print(f"Received port: {KAFKA_PORT}", flush=True)
+  except BaseException as error:
+    print("Unable to parse JSON data from the response!", flush=True)
+
 except BaseException as error:
   print("Unable to fetch topic name from load balancer!", flush=True)
   print(f"Error: {error}", flush=True)
@@ -48,11 +62,12 @@ while consumer == None and retries <= 10:
       print('Unable to find broker after 10 retries, giving up..', flush=True)
 
 
-if consumer.bootstrap_connected():
+if consumer and consumer.bootstrap_connected():
   print("Consumer successfully connected!", flush=True)
 else:
   print("Consumer failed to connect!", flush=True)
 
-for message in consumer:
-  message = message.value
-  print(f"MESSAGE: {message}", flush=True)
+if consumer:
+  for message in consumer:
+    message = message.value
+    print(f"MESSAGE: {message}", flush=True)
