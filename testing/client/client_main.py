@@ -22,6 +22,7 @@ elif args and args[0] == "-vm":
 
 print(f"Using {LOAD_BALANCER_ADDRESS} as load balancer address.", flush=True)
 
+# Fetch Kafka info from the load balancer node
 try:
   print("Fetching a Kafka topic to connect to...", flush=True)
   response = requests.get(f"http://{LOAD_BALANCER_ADDRESS}:5000/client/register")
@@ -42,6 +43,7 @@ except BaseException as error:
   print("Unable to fetch topic name from load balancer!", flush=True)
   print(f"Error: {error}", flush=True)
 
+# Connect to a Kafka topic with a Consumer
 retries = 0
 consumer = None
 while consumer == None and retries <= 10:
@@ -67,6 +69,7 @@ if consumer and consumer.bootstrap_connected():
 else:
   print("Consumer failed to connect!", flush=True)
 
+# Iterate through messages received by the Kafka consumer
 if consumer:
   for message in consumer:
     message = message.value

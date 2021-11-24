@@ -47,6 +47,7 @@ except BaseException as error:
 
 
 # Connect to a Kafka topic with a Producer
+retries = 0
 producer = None
 while producer == None:
   try:
@@ -56,6 +57,9 @@ while producer == None:
   except NoBrokersAvailable:
     print("No brokers available, retrying...", flush=True)
     time.sleep(1)
+    retries += 1
+    if retries > 10:
+      print('Unable to find broker after 10 retries, giving up..', flush=True)
 
 
 # Flask routes
