@@ -30,26 +30,37 @@ try:
   response = requests.get(f"http://{LOAD_BALANCER_ADDRESS}:5000/server/register")
 
   data = None
-  try:
-    data = response.json()
-    TOPIC_NAME = data["kafka_topic"]
-    KAFKA_ADDRESS = data["kafka_address"]
-    KAFKA_PORT = data["kafka_port"]
-    print(f"Received topic name: {TOPIC_NAME}", flush=True)
-    print(f"Received kafka address: {KAFKA_ADDRESS}", flush=True)
-    print(f"Received port: {KAFKA_PORT}", flush=True)
-  except BaseException as error:
-    print("Unable to parse JSON data from the response!", flush=True)
+
+  if response.status_code != 200:
+    print("Something went wrong...", flush=True)
+    try:
+      data = response.json()
+      print(f"Error: {data['error']}", flush=True)
+    except BaseException as error:
+      print("Unable to parse error from response!", flush=True)
+      raise
+    raise BaseException
+  else:
+    try:
+      data = response.json()
+      TOPIC_NAME = data["kafka_topic"]
+      KAFKA_ADDRESS = data["kafka_address"]
+      KAFKA_PORT = data["kafka_port"]
+      print(f"Received topic name: {TOPIC_NAME}", flush=True)
+      print(f"Received kafka address: {KAFKA_ADDRESS}", flush=True)
+      print(f"Received port: {KAFKA_PORT}", flush=True)
+    except BaseException as error:
+      print("Unable to parse JSON data from the response!", flush=True)
 
 except BaseException as error:
-  print("Unable to fetch topic name from load balancer!", flush=True)
+  print("Unable to fetch Kafka details from load balancer!", flush=True)
   print(f"Error: {error}", flush=True)
 
 
 # Connect to a Kafka topic with a Producer
 retries = 0
 producer = None
-while producer == None:
+while producer == None and retries <= 10:
   try:
     producer = KafkaProducer(
       bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"]
