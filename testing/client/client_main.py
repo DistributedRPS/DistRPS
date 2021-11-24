@@ -14,7 +14,7 @@ KAFKA_GROUP = "test-consumer-group"
 
 # Get commandline arguments
 args = sys.argv[1:]
-if args[0] == "-production":
+if args and args[0] == "-production":
   LOAD_BALANCER_ADDRESS = "kafka-load_balancer-1"
 
 print(f"Using {LOAD_BALANCER_ADDRESS} as load balancer address.", flush=True)
