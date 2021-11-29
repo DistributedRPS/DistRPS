@@ -1,3 +1,5 @@
+# The game loop for the clients
+# should be imported and called by the main program.
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
