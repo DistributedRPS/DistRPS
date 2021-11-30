@@ -7,7 +7,7 @@ app = Flask(__name__)
 kafka_admin = KafkaAdminWrapper()
 
 # This kafka address and port should come from configuration
-KAFKA_ADDRESS = "127.0.0.1"
+KAFKA_ADDRESS = "server"
 KAFKA_PORT = 9092
 
 clients = {}
