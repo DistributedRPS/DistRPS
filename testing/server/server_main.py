@@ -57,7 +57,7 @@ except BaseException as error:
     print("Unable to fetch Kafka details from load balancer!", flush=True)
     print(f"Error: {error}", flush=True)
 
-server_game.game_service()
+server_game.game_service(TOPIC_NAME)
 
 # # Connect to a Kafka topic with a Producer
 # retries = 0
