@@ -25,8 +25,8 @@ class KafkaAdminWrapper:
   def create_topic(self, topic_name):
     topic = admin.NewTopic(
       topic_name,
-      2,
-      2,
+      1,
+      1,
     )
 
     try:
