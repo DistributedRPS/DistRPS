@@ -64,6 +64,7 @@ def init_var():
 #   1-player input
 def game_service(topic):
     global game_state_dic
+    global topic_name
     topic_name = topic
     init_var()
     # no exit point, this service should be always running

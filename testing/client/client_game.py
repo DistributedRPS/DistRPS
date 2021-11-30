@@ -44,6 +44,7 @@ def init_var():
 
 # the game itself (3 rounds 2 players tournament)
 def game(topic):
+    global topic_name
     topic_name = topic
     init_var()
     consumer.poll() # start consuming now, may take some time
