@@ -5,7 +5,7 @@ import requests
 import time
 import sys
 import server_game
-
+import uuid
 app = Flask(__name__)
 
 TOPIC_NAME = "messages"
@@ -57,7 +57,9 @@ except BaseException as error:
     print("Unable to fetch Kafka details from load balancer!", flush=True)
     print(f"Error: {error}", flush=True)
 
-server_game.game_service(TOPIC_NAME)
+id = uuid.uuid4()
+server_id = 'server' + str(id)
+server_game.game_service(TOPIC_NAME, server_id)
 
 # # Connect to a Kafka topic with a Producer
 # retries = 0
