@@ -3,6 +3,7 @@ from kafka.errors import NoBrokersAvailable
 import requests
 import time
 import sys
+import client_game
 
 # These should probably be parsed from a configuration file instead of
 # being hardcoded here
@@ -54,34 +55,35 @@ except BaseException as error:
   print("Unable to fetch Kafka details from load balancer!", flush=True)
   print(f"Error: {error}", flush=True)
 
-# Connect to a Kafka topic with a Consumer
-retries = 0
-consumer = None
-while consumer == None and retries <= 10:
-  try:
-    consumer = KafkaConsumer(
-      TOPIC_NAME,
-      group_id = KAFKA_GROUP,
-      bootstrap_servers = [f'{KAFKA_ADDRESS}:{KAFKA_PORT}'],
-      auto_offset_reset = 'earliest',
-      enable_auto_commit = True,
-      value_deserializer = lambda x: x.decode('utf-8')
-    )
-  except:
-    print("No brokers available, retrying...", flush=True)
-    time.sleep(1)
-    retries += 1
-    if retries > 10:
-      print('Unable to find broker after 10 retries, giving up..', flush=True)
-
-
-if consumer and consumer.bootstrap_connected():
-  print("Consumer successfully connected!", flush=True)
-else:
-  print("Consumer failed to connect!", flush=True)
-
-# Iterate through messages received by the Kafka consumer
-if consumer:
-  for message in consumer:
-    message = message.value
-    print(f"MESSAGE: {message}", flush=True)
+client_game.game()
+# # Connect to a Kafka topic with a Consumer
+# retries = 0
+# consumer = None
+# while consumer == None and retries <= 10:
+#   try:
+#     consumer = KafkaConsumer(
+#       TOPIC_NAME,
+#       group_id = KAFKA_GROUP,
+#       bootstrap_servers = [f'{KAFKA_ADDRESS}:{KAFKA_PORT}'],
+#       auto_offset_reset = 'earliest',
+#       enable_auto_commit = True,
+#       value_deserializer = lambda x: x.decode('utf-8')
+#     )
+#   except:
+#     print("No brokers available, retrying...", flush=True)
+#     time.sleep(1)
+#     retries += 1
+#     if retries > 10:
+#       print('Unable to find broker after 10 retries, giving up..', flush=True)
+#
+#
+# if consumer and consumer.bootstrap_connected():
+#   print("Consumer successfully connected!", flush=True)
+# else:
+#   print("Consumer failed to connect!", flush=True)
+#
+# # Iterate through messages received by the Kafka consumer
+# if consumer:
+#   for message in consumer:
+#     message = message.value
+#     print(f"MESSAGE: {message}", flush=True)

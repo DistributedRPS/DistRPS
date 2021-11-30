@@ -7,8 +7,8 @@ import time
 import json
 from kafka.admin import KafkaAdminClient, NewTopic  # temporary
 
-KAFKA_PORT = 29092
-KAFKA_ADDRESS = "kafka-kafka-1" #"127.0.0.1"
+KAFKA_PORT = 9092
+KAFKA_ADDRESS = "192.168.56.103" #"127.0.0.1"
 PLAYER_NUM = 2  # the number of players per tournament. Now I assume all players participate in all rounds.
 TOTAL_ROUND = 3 # total rounds per tournament
 producer = None

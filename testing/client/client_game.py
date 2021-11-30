@@ -7,8 +7,8 @@ import time
 import json
 
 
-KAFKA_PORT = 29092
-KAFKA_ADDRESS = "kafka-kafka-1" #"127.0.0.1"
+KAFKA_PORT = 9092
+KAFKA_ADDRESS = "192.168.56.103" #"127.0.0.1"
 producer = None
 consumer = None
 # Note: all messages in this topic must be encoded in json format!
