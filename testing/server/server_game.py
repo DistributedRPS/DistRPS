@@ -26,6 +26,9 @@ temp_state = {}    # store the player choice temporarily
 # create producer & consumer instance
 def init_var():
     global producer, consumer
+    print(
+        f"topic name: {topic_name}",
+        flush=True)
     while producer == None:
         try:
             producer = KafkaProducer(
@@ -33,7 +36,7 @@ def init_var():
             value_serializer = lambda x: json.dumps(x).encode('utf-8')
             )
         except NoBrokersAvailable:
-            print("No brokers available, retrying...", flush=True)
+            print("No brokers available while creating producer, retrying...", flush=True)
             time.sleep(1)
     while consumer == None:
         try:
@@ -45,7 +48,7 @@ def init_var():
               value_deserializer = lambda x: json.loads(x.decode('utf-8'))
             )
         except:
-            print("No brokers available, retrying...", flush=True)
+            print("No brokers available while creating consumer, retrying...", flush=True)
             time.sleep(1)
 
 # service supporting game loop in client
