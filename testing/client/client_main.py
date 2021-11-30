@@ -6,10 +6,10 @@ import sys
 
 # These should probably be parsed from a configuration file instead of
 # being hardcoded here
-LOAD_BALANCER_ADDRESS = "127.0.0.1" # "kafka-load_balancer-1"
+LOAD_BALANCER_ADDRESS = "client" # "kafka-load_balancer-1"
 TOPIC_NAME = "messages"
 KAFKA_PORT = 9092
-KAFKA_ADDRESS = "kafka-kafka-1" #"127.0.0.1"
+KAFKA_ADDRESS = "server" #"127.0.0.1"
 KAFKA_GROUP = "test-consumer-group"
 
 # Get commandline arguments

@@ -9,8 +9,8 @@ app = Flask(__name__)
 
 TOPIC_NAME = "messages"
 KAFKA_PORT = 9092
-KAFKA_ADDRESS = "127.0.0.1"
-LOAD_BALANCER_ADDRESS = "127.0.0.1"
+KAFKA_ADDRESS = "server"
+LOAD_BALANCER_ADDRESS = "client"
 
 # Get commandline arguments
 args = sys.argv[1:]
