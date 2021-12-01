@@ -18,7 +18,7 @@ if args and args[0] == "-docker":
   LOAD_BALANCER_ADDRESS = "kafka-load_balancer-1"
   KAFKA_PORT = 29092
 elif args and args[0] == "-vm":
-  LOAD_BALANCER_ADDRESS = "<address of vm running load balancer>"
+  LOAD_BALANCER_ADDRESS = "192.168.56.101"
 
 print(f"Using {LOAD_BALANCER_ADDRESS} as load balancer address.", flush=True)
 

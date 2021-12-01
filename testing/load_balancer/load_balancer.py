@@ -1,10 +1,11 @@
-from flask import Flask
-from kafka_communication import KafkaAdminWrapper
+from flask import Flask, request
+from kafka_communication import KafkaAdminWrapper, KafkaCommunication
 import sys
 
 app = Flask(__name__)
 
 kafka_admin = KafkaAdminWrapper()
+kafka_communicator = KafkaCommunication()
 
 # This kafka address and port should come from configuration
 KAFKA_ADDRESS = "127.0.0.1"
@@ -27,6 +28,11 @@ if not kafka_admin.connect(KAFKA_ADDRESS, KAFKA_PORT):
     (f"Failed to connect to Kafka broker with address: {KAFKA_ADDRESS}"
     f" and port: {KAFKA_PORT}"),
     flush=True)
+
+kafka_communicator.initialize_producer(KAFKA_ADDRESS, KAFKA_PORT)
+# When creating topics, append a recognizable key to the end of the topic names
+# Then use that key for the Consumer topic subscription regex
+kafka_communicator.initialize_consumer(KAFKA_ADDRESS, KAFKA_PORT, ["mesages"])
 
 def add_client(client_address, client_id):
   clients[f"{client_id}"] = client_address
@@ -56,7 +62,8 @@ def client_register():
 
 @app.route("/server/register")
 def server_register():
-  new_topic_name = "unique_topic_name_given_by_server"
+  server_id = request.args.get("id")
+  new_topic_name = f"{server_id}-server"
   if add_kafka_topic(new_topic_name):
     return {
       "kafka_topic": kafka_topics[0],
