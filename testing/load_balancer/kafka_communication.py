@@ -8,6 +8,7 @@ class KafkaAdminWrapper:
   admin_client = None
 
   def connect(self, address, port):
+    print(f'Initializing KafkaAdmin with address: {address} and port: {port}')
     retries = 0
     while self.admin_client == None and retries <= 10:
       try:
@@ -72,7 +73,7 @@ class KafkaCommunication:
           print('Unable to find broker after 10 retries, giving up..', flush=True)
         return False
 
-  def initialize_consumer(self, kafka_address, kafka_port, topics, topic_regex):
+  def initialize_consumer(self, kafka_address, kafka_port, topics=[], topic_regex=""):
     print('Initializing KafkaConsumer...', flush=True)
     retries = 0
     while self.consumer == None and retries <= 10:
@@ -99,3 +100,6 @@ class KafkaCommunication:
 
   def poll_messages(self):
     return self.consumer.poll()
+  
+  def get_subscribed_topics(self):
+    return self.consumer.topics()

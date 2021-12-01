@@ -55,6 +55,8 @@ try:
 except BaseException as error:
   print("Unable to fetch Kafka details from load balancer!", flush=True)
   print(f"Error: {error}", flush=True)
+
+
 id = uuid.uuid4()
 client_id = 'client' + str(id)
 client_game.game(TOPIC_NAME, client_id)
