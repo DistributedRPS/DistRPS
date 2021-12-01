@@ -1,20 +1,22 @@
-from flask import Flask, render_template, request
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.errors import NoBrokersAvailable
 import requests
 import time
 import sys
 import json
-
-app = Flask(__name__)
+import server_game
+import uuid
 
 TOPIC_NAME = "messages"
 KAFKA_PORT = 9092
-KAFKA_ADDRESS = "127.0.0.1"
+KAFKA_ADDRESS = "server"
 LOAD_BALANCER_ADDRESS = "127.0.0.1"
 
 consumer = None
 producer = None
+
+id = uuid.uuid4()
+server_id = 'server' + str(id)
 
 # Get commandline arguments
 args = sys.argv[1:]
@@ -31,7 +33,10 @@ print(f"Using {LOAD_BALANCER_ADDRESS} as load balancer address.", flush=True)
 try:
   print("Fetching a Kafka topic to connect to...", flush=True)
   # Add server ID here.
-  response = requests.get(f"http://{LOAD_BALANCER_ADDRESS}:5000/server/register")
+  response = requests.get(
+    f"http://{LOAD_BALANCER_ADDRESS}:5000/server/register",
+    params={ id: server_id },
+  )
 
   data = None
 
@@ -57,9 +62,8 @@ try:
       print("Unable to parse JSON data from the response!", flush=True)
 
 except BaseException as error:
-  print("Unable to fetch Kafka details from load balancer!", flush=True)
-  print(f"Error: {error}", flush=True)
-
+    print("Unable to fetch Kafka details from load balancer!", flush=True)
+    print(f"Error: {error}", flush=True)
 
 def connect_producer():
   retries = 0
@@ -104,17 +108,19 @@ def send_message(message):
   producer.send(TOPIC_NAME, bytes(f'{ "data": {message} }', 'utf-8'))
 
 # Flask routes
-@app.route("/")
-def main_page():
-    return render_template('main.html')
+# @app.route("/")
+# def main_page():
+#     return render_template('main.html')
 
-@app.route("/message", methods=["GET", "POST"])
-def receive_message():
-    if request.method == "POST":
-      print("Request content: " + request.form["message"], flush=True)
-      # put msg into topic
-      future = producer.send(TOPIC_NAME, bytes(request.form['message'], 'utf-8'))
-      return main_page()
-    else:
-      print("GET request received", flush=True)
-      return main_page()
+# @app.route("/message", methods=["GET", "POST"])
+# def receive_message():
+#     if request.method == "POST":
+#       print("Request content: " + request.form["message"], flush=True)
+#       # put msg into topic
+#       future = producer.send(TOPIC_NAME, bytes(request.form['message'], 'utf-8'))
+#       return main_page()
+#     else:
+#       print("GET request received", flush=True)
+#       return main_page()
+
+server_game.game_service(TOPIC_NAME, server_id)

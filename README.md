@@ -32,6 +32,7 @@ To install the dependencies, run:
      
      pip3 install -r requirements.txt
 
+Each VM has as password 123. It makes uses of Lubuntu, expects around 13 gigs of storage space and 1 gig of RAM.
 #### Client
 
 Go to the client -folder
@@ -50,16 +51,23 @@ run:
 
 #### Load balancer
 
+The load balancer is assumed to run on the VM machine called Client with IP address 192.168.56.101. 
+
 Go to the load_balancer -folder
 run: 
 
      export FLASK_APP=load_balancer.py
     
-     flask run
+     flask run --host=0.0.0.0
 
 #### Kafka node and kafka zookeeper
 
-See kafka documentation
+The kafka node is assumed to run on the VM called Server with IP address 192.168.56.103.
+Only the load balancer is aware of the IP address of the kafka node, the game servers and clients need to request it from the load balancer.
+To run the kafka and zookeeper services, please run the startKafka.sh script. To check if the kafka service is properly running, try the command sudo systemctl status kafka.
+To stop the kafka and zookeeper service, please run the stopKafka.sh script.
+
+See kafka documentation for more information.
 
 ### Creating local images
 
