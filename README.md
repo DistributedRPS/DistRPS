@@ -35,19 +35,20 @@ To install the dependencies, run:
 Each VM has as password 123. It makes uses of Lubuntu, expects around 13 gigs of storage space and 1 gig of RAM.
 #### Client
 
+Use the flags given below as necessary depending on if you are running the load_balancer on the VM,
+in Docker, or locally.
+
 Go to the client -folder
 run: 
      
-     python3 client_main.py
+     python3 client_main.py [ -vm | -docker ]
 
 #### Server
 
 Go to the server -folder
 run: 
-
-     export FLASK_APP=server_main.py
     
-     flask run
+     python3 server_main.py [ -vm | -docker ]
 
 #### Load balancer
 
