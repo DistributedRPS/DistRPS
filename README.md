@@ -110,3 +110,14 @@ Run the scripts in different terminal in any nodes with python environment. (con
 First run the server. After several seconds (to wait for it to set up), run the two clients.
 
 Right now it doesn't have any fault tolerance, but the basic logic is done. 3 rounds, 2 players.
+### Briefly try out with support of multiple topics
+
+A special topic "**balancer-special**" is defined. It can be a topic used by the load balancer and one server to communicate or shared by all servers to communicate with the load balancer. (I prefer the former solution) The script *server/temp_add_topic.py* is just a temporary script for testing.
+
+To try out the new feature:
+
+1. Run the *server_game.py* directly.
+2. If you want, run two *client_game.py* and possibly play the game as usual.
+3. Run the *temp_add_topic.py* and enter some unique topic names to add
+4. Choose any one of the new topics you just created, and manually replace the fixed topic name at the bottom of *client_game.py* with it. Then run two *client_game.py* now, and you can see the game also goes well, which means the system now supports adding new topics and playing in those topics.
+
