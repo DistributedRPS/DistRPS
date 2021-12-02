@@ -13,8 +13,11 @@ PLAYER_NUM = 2  # the number of players per tournament. Now I assume all players
 TOTAL_ROUND = 3  # total rounds per tournament
 producer = None
 consumer = None
-topic_name = ''
-server_id = 'server' + str(time.time())
+# can be the channel just between this one server and load balancer or shared by all servers, whatever (maybe the former is better)
+balancer_topic = 'balancer-special' # the special topic communicating with load balancer, maybe not needed when it's the same with topic_name
+topic_name = '' # the special topic communicating with load balancer, or a list of topics (to be compatible with the old version codes)
+active_topics = set()
+server_id = ''
 game_state_dic = {}  # key: topic_name(can identity the tournament), value: {client1: score, client2: score, round: num}
 temp_state = {}  # store the player choice temporarily
 
@@ -42,7 +45,7 @@ def init_var():
     while consumer == None:
         try:
             consumer = KafkaConsumer(
-                topic_name,
+                balancer_topic,
                 client_id=server_id,
                 group_id=server_id,
                 bootstrap_servers=[f'{KAFKA_ADDRESS}:{KAFKA_PORT}'],
@@ -64,21 +67,27 @@ def init_var():
 # requstType:
 #   0-want to join
 #   1-player input
-def game_service(topic, id):
+# topic_init can be string or list of string
+def game_service(topic_init, sid):
     global game_state_dic
     global topic_name
-    topic_name = topic
     global server_id
-    server_id = id
+    global active_topics
+    topic_name = topic_init
+    server_id = sid
     init_var()
+    add_topic(topic_name)
     print("connected to producer and consumer")
     # no exit point, this service should be always running
     for msg in consumer:
         content = msg.value
+        #print(f'***LOG: {server_id} receive {content}', flush=True)
         topic = msg.topic
-        # print(f'***LOG: {server_id} receive {content}', flush=True)
+        # handle messages from the load balancer
+        if topic == balancer_topic:
+            handle_balancer_msg(content)
         # handle messages from clients (players)
-        if 'requestType' in content:
+        elif 'requestType' in content:
             request_type = content['requestType']
             if request_type == '0':
                 # right now, I assume the tournament is assigned by the load balancer, so respond is always yes
@@ -88,10 +97,45 @@ def game_service(topic, id):
                 handle_input(topic, content['clientID'], content['choice'])
             else:
                 print('***Warning: requestType is not accepted in this message', flush=True)
-        # TODO: check subscription and update
-        # TODO: if xxx: break, retrieve(...) and update the topic list, start game_service elsewere again
-        # maybe Use threading
 
+
+# handle the messages from the load balancer
+# 'balanceType' difinition (load balancer<-> server):
+#   0-add topic(s), example: {'balanceType': 0, 'topic': [] or str, ...} load balancer->server
+#   1-remove one topic example: {'serverID': '', 'balanceType': 1, 'topic': '', ...}
+def handle_balancer_msg(content):
+    # TODO: fault tolerance if xxx: break, retrieve(...) and update the topic list, start game_service elsewere again, maybe Use threading
+    if 'balanceType' not in content:
+        return
+    balance_type = content['balanceType']
+    if balance_type == '0':
+        if 'topic' in content:
+            add_topic(content['topic'])
+        else:
+            print('***Warning: topic should be in the content of the message.', flush=True)
+    else:
+        print('***Warning: balanceType is not accepted in this message', flush=True)
+
+# add some topics
+def add_topic(topics):
+    global active_topics
+    if type(topics) is list:
+        for t in topics:
+            active_topics.add(t)
+        consumer.subscribe(list(active_topics))
+    elif type(topics) is str:
+        active_topics.add(topics)
+        consumer.subscribe(list(active_topics))
+    else:
+        print('***Warning: topic should be a list or string', flush=True)
+    print('Updated subscription: ', consumer.subscription())
+
+# remove one topic(string)
+def remove_topic(topic):
+    active_topics.remove(topic)
+    consumer.subscribe(list(active_topics))
+    # send one message to the load balancer, so it can delete this topic
+    producer.send(balancer_topic, {'serverID': server_id, 'balanceType': '1', 'topic': topic, 'info': 'Please delete this topic'})
 
 # tournament inited and wait for all players
 def init_player_state(topic, client_id):
@@ -157,6 +201,7 @@ def end_tournament(topic):
     # print(f'***LOG: {msg_end} sent by {server_id} in topic {topic}', flush=True)
     # since the message is already sent and tournament ends, delete the record
     del game_state_dic[topic]
+    #remove_topic(topic)    # TODO: free this comment when load balancer supports this
 
 
 # find out the winner, still just work for two player right now
@@ -203,12 +248,17 @@ def compare_gesture(arr):
 
 
 if __name__ == '__main__':
-    # try:
-    #     admin_client = KafkaAdminClient(bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"])
-    #     topic_list = []
-    #     topic_list.append(NewTopic(name=topic_name, num_partitions=1, replication_factor=1))
-    #     admin_client.create_topics(new_topics=topic_list, validate_only=False)
-    # except:
-    #     pass
+    balancer_topic = 'balancer-special'    # this topic just for communication bewtween server & load balancer, about topic adding/removing & fault tolerance, etc.
+    game_test_topic = 'game-test'
+    try:
+        admin_client = KafkaAdminClient(bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"])
+        topic_list = []
+        topic_list.append(NewTopic(name=balancer_topic, num_partitions=1, replication_factor=1))
+        topic_list.append(NewTopic(name=game_test_topic, num_partitions=1, replication_factor=1))
+        admin_client.create_topics(new_topics=topic_list, validate_only=False)
+        admin_client.close()
+        print('topic created')
+    except:
+        print('error when creating topics', flush=True)
     print('Service started. Wait for some time and start clients.', flush=True)
-    game_service()
+    game_service([balancer_topic, game_test_topic], 'server123456')

@@ -14,7 +14,7 @@ consumer = None
 # Note: all messages in this topic must be encoded in json format!
 topic_name = ''
 client_id = ''
-game_state = {} # {clientID1: score, ...}   # although this is useless right now...
+game_state = {} # {clientID1: score, ...}
 rps = {'0': 'rock', '1': 'paper', '2': 'scissor'}
 
 # create producer & consumer instance
@@ -146,13 +146,6 @@ def show_result(content):
     else:
         print(f'{winner} wins the game!', flush=True)
     game_state = content['state']
-    # for k, v in game_state.items():
-    #     if k == 'round':
-    #         continue
-    #     if k == client_id:
-    #         print(f'Your score: {v}.')
-    #     else:
-    #         print(f"Player {k}'s score: {v}.")
 
 if __name__ == '__main__':
-    game()
+    game('game-test', str(time.time()))
