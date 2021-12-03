@@ -74,6 +74,7 @@ def get_free_topic_for_client():
 @app.route("/client/register")
 def client_register():
     client_id = request.args.get("id")
+    print(f'Client with ID: {client_id} is registering...')
     if not client_id:
       return { "error": "No Client ID received!"}, 400
 
@@ -84,7 +85,7 @@ def client_register():
         "error": "No available servers found!"
       }, 404
 
-    servers[server_id][clients].append(client_id)
+    servers[server_id]["clients"].append(client_id)
     return {
         "kafka_topic": server_id, # server id doubles as the topic name
         "kafka_address": KAFKA_ADDRESS,
