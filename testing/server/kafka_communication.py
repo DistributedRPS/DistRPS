@@ -22,7 +22,7 @@ class KafkaCommunication:
         retries += 1
         if retries > 10:
           print('Unable to find broker after 10 retries, giving up..', flush=True)
-        return False
+          return False
 
   def initialize_consumer(self, kafka_address, kafka_port, topics=[], topic_regex=""):
     print('Initializing KafkaConsumer...', flush=True)
@@ -44,7 +44,7 @@ class KafkaCommunication:
         retries += 1
         if retries > 10:
           print('Unable to find broker after 10 retries, giving up..', flush=True)
-        return False
+          return False
 
   def send_message(self, topic, message):
     print(f'Sending message: {message}')

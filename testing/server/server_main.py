@@ -8,7 +8,8 @@ import json
 import server_game
 import uuid
 
-TOPIC_NAME = "messages"
+LOAD_BALANCER_TOPIC = "messages"
+SERVER_TOPIC = ""
 KAFKA_PORT = 9092
 KAFKA_ADDRESS = "server"
 LOAD_BALANCER_ADDRESS = "127.0.0.1"
@@ -52,28 +53,32 @@ try:
   else:
     try:
       data = response.json()
-      TOPIC_NAME = data["kafka_topic"]
+      LOAD_BALANCER_TOPIC = data["load_balancer_kafka_topic"]
+      SERVER_TOPIC = data["server_kafka_topic"]
       KAFKA_ADDRESS = data["kafka_address"]
       KAFKA_PORT = data["kafka_port"]
-      print(f"Received topic name: {TOPIC_NAME}", flush=True)
+      print(f"Received load balancertopic name: {LOAD_BALANCER_TOPIC}", flush=True)
+      print(f'Received server topic name: {SERVER_TOPIC}', flush=True)
       print(f"Received kafka address: {KAFKA_ADDRESS}", flush=True)
       print(f"Received port: {KAFKA_PORT}", flush=True)
     except BaseException as error:
       print("Unable to parse JSON data from the response!", flush=True)
+    
 
 except BaseException as error:
     print("Unable to fetch Kafka details from load balancer!", flush=True)
     print(f"Error: {error}", flush=True)
+  
 
 kafka_communicator.initialize_consumer(KAFKA_ADDRESS, KAFKA_PORT, ["messages"])
 kafka_communicator.initialize_producer(KAFKA_ADDRESS, KAFKA_PORT)
 
-kafka_communicator.send_message(TOPIC_NAME, "Does this work?")
+kafka_communicator.send_message(LOAD_BALANCER_TOPIC, "Does this work?")
 
 def send_message(message):
   # Add flag to message so server knows that it doesn't need to react to it
   # when it's own Consumer sees it.
   print(f"Sending message: {message}", flush=True)
-  kafka_communicator.send_message(TOPIC_NAME, bytes(f'{ "data": {message} }', 'utf-8'))
+  kafka_communicator.send_message(LOAD_BALANCER_TOPIC, bytes(f'{ "data": {message} }', 'utf-8'))
 
-server_game.game_service(TOPIC_NAME, server_id)
+server_game.game_service(SERVER_TOPIC, server_id)
