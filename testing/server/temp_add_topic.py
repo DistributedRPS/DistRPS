@@ -18,7 +18,7 @@ producer = KafkaProducer(
 def add_topic(topic_name):
     producer.send(topic_name, {'info': 'nonsense message.'})    # because I found I always had nodenotready errors initializing kafka admin client, I just make use of auto creation here
     producer.send(balancer_topic, 
-        {'balanceType': '0', 'topic': topic_name, 'info': 'Add this topic to your active topic list.'})   # inform the server
+        {'serverID': 'server123456', 'balanceType': '0', 'topic': topic_name, 'info': 'Add this topic to your active topic list.'})   # inform the server
     time.sleep(1)
     producer.send(topic_name, {'info': 'Now you can receive messages in this channel successfully.'})   # not needed
 

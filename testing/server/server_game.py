@@ -90,8 +90,6 @@ def game_service(topic_init, sid):
         elif 'requestType' in content:
             request_type = content['requestType']
             if request_type == '0':
-                # right now, I assume the tournament is assigned by the load balancer, so respond is always yes
-                # maybe some more machanics could be added
                 init_player_state(topic, content['clientID'])
             elif request_type == '1':
                 handle_input(topic, content['clientID'], content['choice'])
@@ -101,7 +99,7 @@ def game_service(topic_init, sid):
 
 # handle the messages from the load balancer
 # 'balanceType' difinition (load balancer<-> server):
-#   0-add topic(s), example: {'balanceType': 0, 'topic': [] or str, ...} load balancer->server
+#   0-add topic(s), example: {'serverID': '', 'balanceType': 0, 'topic': [] or str, ...} load balancer->server
 #   1-remove one topic example: {'serverID': '', 'balanceType': 1, 'topic': '', ...}
 def handle_balancer_msg(content):
     # TODO: fault tolerance if xxx: break, retrieve(...) and update the topic list, start game_service elsewere again, maybe Use threading
@@ -109,10 +107,11 @@ def handle_balancer_msg(content):
         return
     balance_type = content['balanceType']
     if balance_type == '0':
-        if 'topic' in content:
-            add_topic(content['topic'])
-        else:
-            print('***Warning: topic should be in the content of the message.', flush=True)
+        if 'serverID' in content and content['serverID'] == server_id:  # make sure the message is sent to me
+            if 'topic' in content:
+                add_topic(content['topic'])
+            else:
+                print('***Warning: topic should be in the content of the message.', flush=True)
     else:
         print('***Warning: balanceType is not accepted in this message', flush=True)
 
