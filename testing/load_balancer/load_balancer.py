@@ -1,6 +1,7 @@
 from time import sleep
 from flask import Flask, request
 from kafka_communication import KafkaAdminWrapper, KafkaCommunication
+from heartbeat_tracker import Heartbeat
 from os import environ
 from threading import Thread
 import sys
@@ -9,6 +10,7 @@ app = Flask(__name__)
 
 kafka_admin = KafkaAdminWrapper()
 kafka_communicator = KafkaCommunication()
+heartbeat = Heartbeat()
 
 # This kafka address and port should come from configuration
 KAFKA_ADDRESS = "127.0.0.1"
@@ -41,12 +43,24 @@ kafka_communicator.initialize_consumer(
 
 def message_handler(message):
   print(f'Incoming message: {message}')
+  if message['data'] == 'heartbeat':
+    heartbeat.receive_heartbeat(message['sender_id'])
 
+# Start listening for Kafka messages
 message_listener_thread = Thread(
   target=kafka_communicator.start_listening,
   args=(message_handler,)
 )
 message_listener_thread.start()
+
+def handle_heartbeat_timeout(timeouts):
+  print(f'Servers: {timeouts} have timeouted their heartbeats!')
+
+heartbeat_thread = Thread(
+  target=heartbeat.watch_timeouts,
+  args=(30, handle_heartbeat_timeout)
+)
+heartbeat_thread.start()
 
 def add_client(client_address, client_id):
     clients[f"{client_id}"] = client_address

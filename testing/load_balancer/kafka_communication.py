@@ -109,4 +109,4 @@ class KafkaCommunication:
     print('Started listening for messages...')
     for message in self.consumer:
       print(f'Message: {message.value}')
-      callback(message)
+      callback(message.value)
