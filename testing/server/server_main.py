@@ -1,94 +1,96 @@
-from flask import Flask, render_template, request
-from kafka import KafkaProducer
+from kafka import KafkaProducer, KafkaConsumer, producer
 from kafka.errors import NoBrokersAvailable
+from kafka_communication import KafkaCommunication
+from threading import Thread
 import requests
 import time
 import sys
 import server_game
 import uuid
-app = Flask(__name__)
 
-TOPIC_NAME = "messages"
+LOAD_BALANCER_TOPIC = "messages"
+SERVER_TOPIC = ""
 KAFKA_PORT = 9092
 KAFKA_ADDRESS = "server"
-LOAD_BALANCER_ADDRESS = "192.168.56.101"
+LOAD_BALANCER_ADDRESS = "127.0.0.1"
+
+kafka_communicator = KafkaCommunication()
+
+id = uuid.uuid4()
+server_id = f'{str(id)}'
 
 # Get commandline arguments
 args = sys.argv[1:]
 if args and args[0] == "-docker":
-    LOAD_BALANCER_ADDRESS = "kafka-load_balancer-1"
-    KAFKA_PORT = 29092
-    KAFKA_ADDRESS = "kafka-kafka-1"
+  LOAD_BALANCER_ADDRESS = "kafka-load_balancer-1"
+  KAFKA_PORT = 29092
+  KAFKA_ADDRESS = "kafka-kafka-1"
 elif args and args[0] == "-vm":
-    LOAD_BALANCER_ADDRESS = "<address of vm running the load balancer>"
-    KAFKA_ADDRESS = "<address of vm runnig the kafka instance>"
+  LOAD_BALANCER_ADDRESS = "192.168.56.101"
 
 print(f"Using {LOAD_BALANCER_ADDRESS} as load balancer address.", flush=True)
 
 # Fetch Kafka info from the load balancer node
 try:
-    print("Fetching a Kafka topic to connect to...", flush=True)
-    response = requests.get(f"http://{LOAD_BALANCER_ADDRESS}:5000/server/register")
+  print("Fetching a Kafka topic to connect to...", flush=True)
+  # Add server ID here.
+  response = requests.get(
+    f"http://{LOAD_BALANCER_ADDRESS}:5000/server/register",
+    params={ 'id': server_id },
+  )
 
-    data = None
+  data = None
 
-    if response.status_code != 200:
-        print("Something went wrong...", flush=True)
-        try:
-            data = response.json()
-            print(f"Error: {data['error']}", flush=True)
-        except BaseException as error:
-            print("Unable to parse error from response!", flush=True)
-            raise
-        raise BaseException
-    else:
-        try:
-            data = response.json()
-            TOPIC_NAME = data["kafka_topic"]
-            KAFKA_ADDRESS = data["kafka_address"]
-            KAFKA_PORT = data["kafka_port"]
-            print(f"Received topic name: {TOPIC_NAME}", flush=True)
-            print(f"Received kafka address: {KAFKA_ADDRESS}", flush=True)
-            print(f"Received port: {KAFKA_PORT}", flush=True)
-        except BaseException as error:
-            print("Unable to parse JSON data from the response!", flush=True)
+  if response.status_code != 200:
+    print("Something went wrong...", flush=True)
+    try:
+      data = response.json()
+      print(f"Error: {data['error']}", flush=True)
+    except BaseException as error:
+      print("Unable to parse error from response!", flush=True)
+      raise
+    raise BaseException
+  else:
+    try:
+      data = response.json()
+      LOAD_BALANCER_TOPIC = data["load_balancer_kafka_topic"]
+      SERVER_TOPIC = data["server_kafka_topic"]
+      KAFKA_ADDRESS = data["kafka_address"]
+      KAFKA_PORT = data["kafka_port"]
+      print(f"Received load balancertopic name: {LOAD_BALANCER_TOPIC}", flush=True)
+      print(f'Received server topic name: {SERVER_TOPIC}', flush=True)
+      print(f"Received kafka address: {KAFKA_ADDRESS}", flush=True)
+      print(f"Received port: {KAFKA_PORT}", flush=True)
+    except BaseException as error:
+      print("Unable to parse JSON data from the response!", flush=True)
+    
 
 except BaseException as error:
     print("Unable to fetch Kafka details from load balancer!", flush=True)
     print(f"Error: {error}", flush=True)
+  
 
-id = uuid.uuid4()
-server_id = 'server' + str(id)
-server_game.game_service(TOPIC_NAME, server_id)
+kafka_communicator.initialize_consumer(KAFKA_ADDRESS, KAFKA_PORT, ["messages"])
+kafka_communicator.initialize_producer(KAFKA_ADDRESS, KAFKA_PORT)
 
-# # Connect to a Kafka topic with a Producer
-# retries = 0
-# producer = None
-# while producer == None and retries <= 10:
-#   try:
-#     producer = KafkaProducer(
-#       bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"]
-#     )
-#   except NoBrokersAvailable:
-#     print("No brokers available, retrying...", flush=True)
-#     time.sleep(1)
-#     retries += 1
-#     if retries > 10:
-#       print('Unable to find broker after 10 retries, giving up..', flush=True)
-#
-#
-# # Flask routes
-# @app.route("/")
-# def main_page():
-#     return render_template('main.html')
-#
-# @app.route("/message", methods=["GET", "POST"])
-# def receive_message():
-#     if request.method == "POST":
-#       print("Request content: " + request.form["message"], flush=True)
-#       # put msg into topic
-#       future = producer.send(TOPIC_NAME, bytes(request.form['message'], 'utf-8'))
-#       return main_page()
-#     else:
-#       print("GET request received", flush=True)
-#       return main_page()
+kafka_communicator.send_message(LOAD_BALANCER_TOPIC, { "data": "Does this work?" })
+
+def send_message(message):
+  # Add flag to message so server knows that it doesn't need to react to it
+  # when it's own Consumer sees it.
+  print(f"Sending message: {message}", flush=True)
+  kafka_communicator.send_message(
+    LOAD_BALANCER_TOPIC,
+    { "sender_id": server_id, "data": message }
+  )
+
+def heartbeat():
+  while True:
+    print('Sending heartbeat...')
+    send_message('heartbeat')
+    time.sleep(5)
+
+heartbeat_thread = Thread(target=heartbeat)
+heartbeat_thread.start()
+
+server_game.game_service(SERVER_TOPIC, server_id)
