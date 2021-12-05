@@ -1,5 +1,6 @@
 from kafka import KafkaAdminClient, admin, KafkaProducer, KafkaConsumer
 from kafka.errors import NoBrokersAvailable
+from typing import Callable
 import time
 import json
 
@@ -103,3 +104,9 @@ class KafkaCommunication:
   
   def get_subscribed_topics(self):
     return self.consumer.topics()
+
+  def start_listening(self, callback: Callable[[dict], any]):
+    print('Started listening for messages...')
+    for message in self.consumer:
+      print(f'Message: {message.value}')
+      callback(message)

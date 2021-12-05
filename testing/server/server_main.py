@@ -1,10 +1,10 @@
 from kafka import KafkaProducer, KafkaConsumer, producer
 from kafka.errors import NoBrokersAvailable
 from kafka_communication import KafkaCommunication
+from threading import Thread
 import requests
 import time
 import sys
-import json
 import server_game
 import uuid
 
@@ -73,12 +73,24 @@ except BaseException as error:
 kafka_communicator.initialize_consumer(KAFKA_ADDRESS, KAFKA_PORT, ["messages"])
 kafka_communicator.initialize_producer(KAFKA_ADDRESS, KAFKA_PORT)
 
-kafka_communicator.send_message(LOAD_BALANCER_TOPIC, "Does this work?")
+kafka_communicator.send_message(LOAD_BALANCER_TOPIC, { "data": "Does this work?" })
 
 def send_message(message):
   # Add flag to message so server knows that it doesn't need to react to it
   # when it's own Consumer sees it.
   print(f"Sending message: {message}", flush=True)
-  kafka_communicator.send_message(LOAD_BALANCER_TOPIC, bytes(f'{ "data": {message} }', 'utf-8'))
+  kafka_communicator.send_message(
+    LOAD_BALANCER_TOPIC,
+    { "sender_id": server_id, "data": message }
+  )
+
+def heartbeat():
+  while True:
+    print('Sending heartbeat...')
+    send_message('heartbeat')
+    time.sleep(5)
+
+heartbeat_thread = Thread(target=heartbeat)
+heartbeat_thread.start()
 
 server_game.game_service(SERVER_TOPIC, server_id)

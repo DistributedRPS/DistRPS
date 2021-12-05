@@ -2,6 +2,7 @@ from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import time
 import json
+import threading
 
 class KafkaCommunication:
   consumer = None
@@ -13,7 +14,8 @@ class KafkaCommunication:
     while self.producer == None and retries <= 10:
       try:
         self.producer = KafkaProducer(
-          bootstrap_servers=[f"{kafka_address}:{kafka_port}"]
+          bootstrap_servers=[f"{kafka_address}:{kafka_port}"],
+          value_serializer=lambda x: json.dumps(x).encode('utf-8')
         )
         return True
       except NoBrokersAvailable:
@@ -47,8 +49,15 @@ class KafkaCommunication:
           return False
 
   def send_message(self, topic, message):
-    print(f'Sending message: {message}')
-    self.producer.send(topic, bytes(message, 'utf-8'))
+    print(f'Sending message: {message} to topic {topic}')
+    try:
+      self.producer.send(topic, message)
+      return True
+    except BaseException as error:
+      print(f'Error sending message: {error}')
+      return False
 
   def poll_messages(self):
+    print('Polling for messages...')
     return self.consumer.poll()
+

@@ -2,6 +2,7 @@ from time import sleep
 from flask import Flask, request
 from kafka_communication import KafkaAdminWrapper, KafkaCommunication
 from os import environ
+from threading import Thread
 import sys
 
 app = Flask(__name__)
@@ -37,6 +38,15 @@ kafka_communicator.initialize_producer(KAFKA_ADDRESS, KAFKA_PORT)
 kafka_communicator.initialize_consumer(
   KAFKA_ADDRESS, KAFKA_PORT, [f"{LOAD_BALANCER_KAFKA_TOPIC}"]
 )
+
+def message_handler(message):
+  print(f'Incoming message: {message}')
+
+message_listener_thread = Thread(
+  target=kafka_communicator.start_listening,
+  args=(message_handler,)
+)
+message_listener_thread.start()
 
 def add_client(client_address, client_id):
     clients[f"{client_id}"] = client_address
