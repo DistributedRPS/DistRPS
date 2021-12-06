@@ -18,16 +18,14 @@ consumer = None
 balancer_topic = 'balancer-special' # the special topic communicating with load balancer, maybe not needed when it's the same with topic_name
 topic_name = '' # (just used to be compatible with the old version codes)
 active_topics = set()
-server_id = ''
+server_id = 'server-default'
 game_state_dic = {}  # key: topic_name(can identity the tournament), value: {client1: score, client2: score, round: num}
 temp_state = {}  # store the player choice temporarily
 
 # create producer & consumer instance
 def init_var():
     global producer, consumer
-    print(
-        f"topic name: {topic_name}",
-        flush=True)
+    print(f"topic name: {topic_name}", flush=True)
     while producer == None:
         try:
             producer = KafkaProducer(

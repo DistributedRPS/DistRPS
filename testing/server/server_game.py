@@ -28,10 +28,14 @@ def game_service(topic_init, sid):
     game_common.add_topic(game_common.topic_name)
     print("connected to producer and consumer")
     # no exit point, this service should be always running
-    for msg in game_common.consumer:
-        content = msg.value
+    while True:
+        msg = game_common.consumer.poll(timeout_ms=100000, max_records=1)
+        if msg == {} or None:
+            continue
+        for v in msg.values():
+            content = v[0].value
+            topic = v[0].topic
         #print(f'***LOG: {server_id} receive {content}', flush=True)
-        topic = msg.topic
         # handle messages from the load balancer
         if topic == game_common.balancer_topic:
             handle_balancer_msg(content)
@@ -82,7 +86,7 @@ if __name__ == '__main__':
     balancer_topic = 'balancer-special'    # this topic just for communication bewtween server & load balancer, about topic adding/removing & fault tolerance, etc.
     game_test_topic = 'game-test'
     try:
-        admin_client = KafkaAdminClient(bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"])
+        admin_client = KafkaAdminClient(bootstrap_servers=[f"{game_common.KAFKA_ADDRESS}:{game_common.KAFKA_PORT}"])
         topic_list = []
         topic_list.append(NewTopic(name=balancer_topic, num_partitions=1, replication_factor=1))
         topic_list.append(NewTopic(name=game_test_topic, num_partitions=1, replication_factor=1))
