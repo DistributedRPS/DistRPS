@@ -4,8 +4,6 @@ from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import time
 import json
-from kafka.admin import KafkaAdminClient, NewTopic  # temporary
-from threading import Thread
 from threading import Lock
 
 KAFKA_PORT = 9092
@@ -21,6 +19,10 @@ active_topics = set()
 server_id = 'server-default'
 game_state_dic = {}  # key: topic_name(can identity the tournament), value: {client1: score, client2: score, round: num}
 temp_state = {}  # store the player choice temporarily
+
+active_topics_lock = Lock()
+game_state_lock = Lock()
+temp_state_lock = Lock()
 
 # create producer & consumer instance
 def init_var():
@@ -60,6 +62,7 @@ def handle_client_msg(topic, content):
 # add some topics
 def add_topic(topics):
     global active_topics
+    active_topics_lock.acquire()
     if type(topics) is list:
         for t in topics:
             active_topics.add(t)
@@ -69,11 +72,16 @@ def add_topic(topics):
         consumer.subscribe(list(active_topics))
     else:
         print('***Warning: topic should be a list or string', flush=True)
+    active_topics_lock.release()
+    print(active_topics)
     print('Updated subscription: ', consumer.subscription())
 
 # remove one topic(string)
 def remove_topic(topic):
+    global active_topics
+    active_topics_lock.acquire()
     active_topics.remove(topic)
+    active_topics_lock.release()
     consumer.subscribe(list(active_topics))
     # send one message to the load balancer, so it can delete this topic
     send_del2lb(topic)
@@ -86,30 +94,33 @@ def init_player_state(topic, client_id):
     global game_state_dic
     msg_start = {'serverID': server_id, 'eventType': '0', 'info': "Ok, let's start"}
     producer.send(topic, msg_start)
-    # print(f'***LOG: {msg_start} sent by {server_id} in topic {topic}', flush=True)
+    game_state_lock.acquire()
     if topic in game_state_dic:
         game_state_dic[topic][client_id] = 0
         if len(game_state_dic[topic].keys()) == PLAYER_NUM + 1:  # because of round...
             # now all players are ok, so tournament "really" starts, the server asks for input
             game_state_dic[topic]['round'] = 0
+            temp_state_lock.acquire()
             temp_state[topic] = {}
+            temp_state_lock.release()
             request_input(topic)
     else:
         game_state_dic[topic] = {client_id: 0, 'round': 0}
-    # print(f'***LOG: game state on server: {game_state_dic}', flush=True)
+    game_state_lock.release()
 
 
 # ask for input
 def request_input(topic):
     msg_ask = {'serverID': server_id, 'eventType': '1', 'info': 'Give me the input'}
     producer.send(topic, msg_ask)
-    # print(f'***LOG: {msg_ask} sent by {server_id} in topic {topic}', flush=True)
 
 
 # handle players' input
 def handle_input(topic, client_id, gesture):
     global temp_state
+    temp_state_lock.acquire()
     temp_state[topic][client_id] = gesture
+    temp_state_lock.release()
     if len(temp_state[topic].keys()) == PLAYER_NUM:
         # this round finishes
         param = []
@@ -117,6 +128,7 @@ def handle_input(topic, client_id, gesture):
             param.append({'client_id': k, 'gesture': v})
         winner = compare_gesture(param)
         # update game state
+        game_state_lock.acquire()
         if winner != None:
             game_state_dic[topic][winner] += 1
         # inform clients about update
@@ -125,10 +137,12 @@ def handle_input(topic, client_id, gesture):
                       'temp': temp_state[topic],
                       'info': 'update the game state'}
         game_state_dic[topic]['round'] += 1
+        game_state_lock.release()
         producer.send(topic, msg_update)
-        # print(f'***LOG: {msg_update} sent by {server_id} in topic {topic}', flush=True)
         # add round count and reset temp
+        temp_state_lock.acquire()
         temp_state[topic] = {}
+        temp_state_lock.release()
         round_end(topic)
 
 def round_end(topic):
@@ -144,9 +158,10 @@ def end_tournament(topic):
     msg_end = {'serverID': server_id, 'eventType': '3', 'info': 'tournament ends',
                'winner': winner, 'state': game_state_dic[topic]}
     producer.send(topic, msg_end)
-    # print(f'***LOG: {msg_end} sent by {server_id} in topic {topic}', flush=True)
     # since the message is already sent and tournament ends, delete the record
+    game_state_lock.acquire()
     del game_state_dic[topic]
+    game_state_lock.release()
     #remove_topic(topic)    # TODO: free this comment when load balancer supports this
 
 # find out the winner, still just work for two player right now

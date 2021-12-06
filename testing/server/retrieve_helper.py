@@ -59,7 +59,9 @@ def recover_states():
             continue    # no need to do anything, and no need to add this topic to serve
         else:
             situation[k] = (code_num, start_ind)
+            game_common.temp_state_lock.acquire()
             game_common.temp_state[k] = {}
+            game_common.temp_state_lock.release()
     return msg_storage, situation
 
 
@@ -86,16 +88,22 @@ def analyze_messages(topic, records):
         # check if its round
         previous = records[last_ind - 1]
         if 'eventType' in previous and previous['eventType'] == '2':
+            game_common.game_state_lock.acquire()
             game_common.game_state_dic[topic] = previous['state']
+            game_common.game_state_lock.release()
         else:   # first round
             tmp = {'round': 0}
             for cid in client_ids:
                 tmp[cid] = 0
+            game_common.game_state_lock.acquire()
             game_common.game_state_dic[topic] = tmp
+            game_common.game_state_lock.release()
         return (1, last_ind+1)
     elif last_msg['eventType'] == '2':  # just updated
         # directly fetch game states
+        game_common.game_state_lock.acquire()
         game_common.game_state_dic[topic] = last_msg['state']
+        game_common.game_state_lock.release()
         return (2, last_ind+1)
     elif last_msg['eventType'] == '3':  # just ended
         game_common.send_del2lb(topic)
