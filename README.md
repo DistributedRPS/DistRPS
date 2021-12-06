@@ -54,9 +54,9 @@ run:
 
 The load balancer is assumed to run on the VM machine called Client with IP address 192.168.56.101. 
 
-When running the load_balancer, the following environment variables can be used to determine the address and port of the Kafka instance:
+When running the load_balancer, the environment variable ENV can be used to determine the address and port of the Kafka instance:
 
-| Variable | Use case |
+| Value | Use case |
 | -------- | -------- |
 | vm       | When running the Kafka instance in a VM |
 | production | When running the Kafka instance in a VM |
@@ -68,7 +68,7 @@ Go to the load_balancer -folder
 run: 
 
      export FLASK_APP=load_balancer.py
-     export ENV=<the variable from the table above that suits the environment>
+     export ENV=<the value from the table above that suits the environment>
     
      flask run --host=0.0.0.0
 
