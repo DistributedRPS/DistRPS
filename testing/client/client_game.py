@@ -148,4 +148,4 @@ def show_result(content):
     game_state = content['state']
 
 if __name__ == '__main__':
-    game('game-test', str(time.time()))
+    game('game-test5', str(time.time()))

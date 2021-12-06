@@ -5,10 +5,6 @@ from threading import Thread
 import game_common
 import retrieve_helper
 
-# TODO:
-# FAULT TOLERANCE (server-side)
-# assign existed topics to it and it will retrieve those game states and begin serving
-
 # service supporting game loop in client
 # event definition (server->client):
 # eventType: 
@@ -41,13 +37,7 @@ def game_service(topic_init, sid):
             handle_balancer_msg(content)
         # handle messages from clients (players)
         elif 'requestType' in content:
-            request_type = content['requestType']
-            if request_type == '0':
-                game_common.init_player_state(topic, content['clientID'])
-            elif request_type == '1':
-                game_common.handle_input(topic, content['clientID'], content['choice'])
-            else:
-                print('***Warning: requestType is not accepted in this message', flush=True)
+            game_common.handle_client_msg(topic, content)
 
 # handle the messages from the load balancer
 # 'balanceType' difinition (load balancer<-> server):
@@ -55,7 +45,6 @@ def game_service(topic_init, sid):
 #   1-remove one topic, {'serverID': '', 'balanceType': '1', 'topic': '', ...} server->load balancer
 #   2-retrieve and serve these topics, {'serverID': '', 'balanceType': '2', 'topic': [], ...} load balancer->server
 def handle_balancer_msg(content):
-    # TODO: fault tolerance if xxx: break, retrieve(...) and update the topic list, start game_service elsewere again, maybe Use threading
     if 'balanceType' not in content:
         return
     balance_type = content['balanceType']
@@ -84,7 +73,7 @@ def handle_balancer_msg(content):
 
 if __name__ == '__main__':
     balancer_topic = 'balancer-special'    # this topic just for communication bewtween server & load balancer, about topic adding/removing & fault tolerance, etc.
-    game_test_topic = 'game-test'
+    game_test_topic = 'game-test5'
     try:
         admin_client = KafkaAdminClient(bootstrap_servers=[f"{game_common.KAFKA_ADDRESS}:{game_common.KAFKA_PORT}"])
         topic_list = []
@@ -96,4 +85,4 @@ if __name__ == '__main__':
     except:
         print('error when creating topics', flush=True)
     print('Service started. Wait for some time and start clients.', flush=True)
-    game_service([balancer_topic, game_test_topic], 'server123456')
+    game_service([balancer_topic, game_test_topic], 'servernew123')

@@ -48,6 +48,15 @@ def init_var():
             print("No brokers available while creating consumer, retrying...", flush=True)
             time.sleep(1)
 
+def handle_client_msg(topic, content):
+    request_type = content['requestType']
+    if request_type == '0':
+        init_player_state(topic, content['clientID'])
+    elif request_type == '1':
+        handle_input(topic, content['clientID'], content['choice'])
+    else:
+        print('***Warning: requestType is not accepted in this message', flush=True)
+
 # add some topics
 def add_topic(topics):
     global active_topics
@@ -67,6 +76,9 @@ def remove_topic(topic):
     active_topics.remove(topic)
     consumer.subscribe(list(active_topics))
     # send one message to the load balancer, so it can delete this topic
+    send_del2lb(topic)
+
+def send_del2lb(topic):
     producer.send(balancer_topic, {'serverID': server_id, 'balanceType': '1', 'topic': topic, 'info': 'Please delete this topic'})
 
 # tournament inited and wait for all players
@@ -112,16 +124,19 @@ def handle_input(topic, client_id, gesture):
                       'winner': winner, 'state': game_state_dic[topic],
                       'temp': temp_state[topic],
                       'info': 'update the game state'}
+        game_state_dic[topic]['round'] += 1
         producer.send(topic, msg_update)
         # print(f'***LOG: {msg_update} sent by {server_id} in topic {topic}', flush=True)
         # add round count and reset temp
-        game_state_dic[topic]['round'] += 1
         temp_state[topic] = {}
-        # check if game ends
-        if game_state_dic[topic]['round'] > TOTAL_ROUND:
-            end_tournament(topic)
-        else:
-            request_input(topic)
+        round_end(topic)
+
+def round_end(topic):
+    # check if game ends
+    if game_state_dic[topic]['round'] > TOTAL_ROUND:
+        end_tournament(topic)
+    else:
+        request_input(topic)
 
 # handle the end of tournament
 def end_tournament(topic):
@@ -133,8 +148,6 @@ def end_tournament(topic):
     # since the message is already sent and tournament ends, delete the record
     del game_state_dic[topic]
     #remove_topic(topic)    # TODO: free this comment when load balancer supports this
-
-
 
 # find out the winner, still just work for two player right now
 def find_winner(topic):
