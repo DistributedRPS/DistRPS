@@ -91,7 +91,7 @@ def init_player_state(topic, client_id):
         game_state_dic[topic][client_id] = 0
         if len(game_state_dic[topic].keys()) == PLAYER_NUM + 1:  # because of round...
             # now all players are ok, so tournament "really" starts, the server asks for input
-            game_state_dic[topic]['round'] = 1
+            game_state_dic[topic]['round'] = 0
             temp_state[topic] = {}
             request_input(topic)
     else:
@@ -133,7 +133,7 @@ def handle_input(topic, client_id, gesture):
 
 def round_end(topic):
     # check if game ends
-    if game_state_dic[topic]['round'] > TOTAL_ROUND:
+    if game_state_dic[topic]['round'] >= TOTAL_ROUND:
         end_tournament(topic)
     else:
         request_input(topic)

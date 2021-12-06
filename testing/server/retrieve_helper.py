@@ -91,6 +91,7 @@ def analyze_messages(topic, records):
             tmp = {'round': 0}
             for cid in client_ids:
                 tmp[cid] = 0
+            game_common.game_state_dic[topic] = tmp
         return (1, last_ind+1)
     elif last_msg['eventType'] == '2':  # just updated
         # directly fetch game states
