@@ -162,7 +162,7 @@ def end_tournament(topic):
     game_state_lock.acquire()
     del game_state_dic[topic]
     game_state_lock.release()
-    #remove_topic(topic)    # TODO: free this comment when load balancer supports this
+    remove_topic(topic)
 
 # find out the winner, still just work for two player right now
 def find_winner(topic):
