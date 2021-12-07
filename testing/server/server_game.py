@@ -2,6 +2,7 @@
 # should be imported and called by the main program.
 from kafka.admin import KafkaAdminClient, NewTopic  # temporary
 from threading import Thread
+from constants import MESSAGE_CODES
 import game_common
 import retrieve_helper
 
@@ -17,9 +18,9 @@ import retrieve_helper
 #   0-want to join
 #   1-player input
 # topic_init can be string or list of string
-def game_service(topic_init, sid):
+def game_service(topic_init, server_id):
     game_common.topic_name = topic_init
-    game_common.server_id = sid
+    game_common.server_id = server_id
     game_common.init_var()
     game_common.add_topic(game_common.topic_name)
     print("connected to producer and consumer")
@@ -40,24 +41,24 @@ def game_service(topic_init, sid):
             game_common.handle_client_msg(topic, content)
 
 # handle the messages from the load balancer
-# 'balanceType' difinition (load balancer<-> server):
-#   0-add topic(s), {'serverID': '0', 'balanceType': 0, 'topic': [] or str, ...} load balancer->server
-#   1-remove one topic, {'serverID': '', 'balanceType': '1', 'topic': '', ...} server->load balancer
-#   2-retrieve and serve these topics, {'serverID': '', 'balanceType': '2', 'topic': [], ...} load balancer->server
+# 'message_code' difinition (load balancer<-> server):
+#   0-add topic(s), {'serverID': '0', 'message_code': 0, 'topic': [] or str, ...} load balancer->server
+#   1-remove one topic, {'serverID': '', 'message_code': '1', 'topic': '', ...} server->load balancer
+#   2-retrieve and serve these topics, {'serverID': '', 'message_code': '2', 'topic': [], ...} load balancer->server
 def handle_balancer_msg(content):
-    if 'balanceType' not in content:
+    if 'message_code' not in content:
         return
-    balance_type = content['balanceType']
+    message_code = content['message_code']
     if 'serverID' not in content or content['serverID'] != game_common.server_id:  # make sure the message is sent to me
         return
-    if balance_type == '0':
+    if message_code == MESSAGE_CODES['ADD_TOPIC']:
             if 'topic' in content:
                 game_common.add_topic(content['topic'])
             else:
                 print('***Warning: arg topic should be in the content of the message.', flush=True)
-    elif balance_type == '1':   # sent by myself
+    elif message_code == MESSAGE_CODES['DELETE_TOPIC']:   # sent by myself
         pass
-    elif balance_type == '2':
+    elif message_code == MESSAGE_CODES['SEND_TOPIC_LIST']:
         if 'topic' in content:
             topics = content['topic']
             if type(topics) is list:
@@ -68,7 +69,7 @@ def handle_balancer_msg(content):
         else:
             print('***Warning: arg topic should be in the content of the message', flush=True)
     else:
-        print('***Warning: balanceType is not accepted in this message', flush=True)
+        print('***Warning: message_code is not accepted in this message', flush=True)
 
 
 if __name__ == '__main__':

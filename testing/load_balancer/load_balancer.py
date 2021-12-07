@@ -4,6 +4,7 @@ from kafka_communication import KafkaAdminWrapper, KafkaCommunication
 from heartbeat_tracker import Heartbeat
 from os import environ
 from threading import Thread
+from constants import MESSAGE_CODES
 import sys
 
 app = Flask(__name__)
@@ -12,17 +13,18 @@ kafka_admin = KafkaAdminWrapper()
 kafka_communicator = KafkaCommunication()
 heartbeat = Heartbeat()
 
-# This kafka address and port should come from configuration
 KAFKA_ADDRESS = "127.0.0.1"
 KAFKA_PORT = 9092
 LOAD_BALANCER_KAFKA_TOPIC = "load_balancer"
 ENV = environ.get("ENV")
 
 clients = {}
+# Keep track of all servers in the system, and which clients they are serving
+# { <server_id: { "clients": [], "tournaments": None | int } }
 servers = {}
-kafka_topics = ["messages"]
+kafka_topics = [LOAD_BALANCER_KAFKA_TOPIC]
 
-# Get commandline arguments
+# Check environment configuration
 if ENV == "docker":
     KAFKA_ADDRESS = "kafka-kafka-1"
     KAFKA_PORT = 29092
@@ -43,8 +45,33 @@ kafka_communicator.initialize_consumer(
 
 def message_handler(message):
   print(f'Incoming message: {message}')
-  if message['data'] == 'heartbeat':
+  if 'data' in message and message['data'] == 'heartbeat':
     heartbeat.receive_heartbeat(message['sender_id'])
+    return
+
+  if 'message_code' in message:
+    message_code = message['message_code']
+    print(f'Received a message with code: {message_code}')
+
+    if message_code == MESSAGE_CODES['DELETE_TOPIC']:
+      if 'topic' in message:
+        if kafka_admin.delete_topic(message['topic']):
+          # Inform that topic successfully deleted?
+          pass
+      else:
+        print('Bad "Delete topic" -request: no topic name provided')
+        # Send error message back to requester?
+
+    if message_code == MESSAGE_CODES['ADD_TOPIC']:
+      if 'topic' in message:
+        if kafka_admin.create_topic(message['topic']):
+          # Send topic name back to requester?
+          pass
+      else:
+        print('Bad "Add topic" -request: no topic name provided')
+        # Send error message back to requester?
+
+    
 
 # Start listening for Kafka messages
 message_listener_thread = Thread(
@@ -55,7 +82,10 @@ message_listener_thread.start()
 
 def handle_heartbeat_timeout(timeouts):
   print(f'Servers: {timeouts} have timeouted their heartbeats!')
+  # Find the backups for each timeouted server
+  # Give each backup server the game topics the corresponding crashed server was using
 
+# Start tracking Server heartbeats and notify on unresponsive servers
 heartbeat_thread = Thread(
   target=heartbeat.watch_timeouts,
   args=(30, handle_heartbeat_timeout)
@@ -73,7 +103,7 @@ def add_server(server_address, server_id, kafka_topic):
     }
 
 
-def add_kafka_topic(topic_name):
+def create_kafka_topic(topic_name):
     return kafka_admin.create_topic(topic_name)
 
 # Go through all registered servers and if found, return the first server 
@@ -104,14 +134,14 @@ def client_register():
 
     server_id = get_free_topic_for_client()
     if not server_id:
-      # we should spin up a new server if none are free for a new client!
+      # We should spin up a new server if none are free for a new client!
       return {
         "error": "No available servers found!"
       }, 404
 
     servers[server_id]["clients"].append(client_id)
     return {
-        "kafka_topic": server_id, # server id doubles as the topic name
+        "kafka_topic": server_id, # Server ID doubles as the topic name
         "kafka_address": KAFKA_ADDRESS,
         "kafka_port": KAFKA_PORT,
     }
@@ -124,9 +154,8 @@ def server_register():
     print("Server did not provide a Server ID!")
     return { "error": "No Server ID received!" }, 400
 
-  new_topic_name = server_id
   print(f'Creating a new topic: {server_id}, for the registered server...')
-  if add_kafka_topic(new_topic_name):
+  if create_kafka_topic(server_id):
     print(f'Successfully created topic {server_id}')
   else:
     print(f'Unable to create topic {server_id}. It might already exist.')
@@ -136,7 +165,7 @@ def server_register():
 
   return {
       "load_balancer_kafka_topic": LOAD_BALANCER_KAFKA_TOPIC,
-      "server_kafka_topic": new_topic_name,
+      "server_kafka_topic": server_id, # Server ID doubles as the topic name
       "kafka_address": KAFKA_ADDRESS,
       "kafka_port": KAFKA_PORT,
   }

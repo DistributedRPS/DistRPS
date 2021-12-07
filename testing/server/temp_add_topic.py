@@ -5,6 +5,7 @@ from kafka.errors import NoBrokersAvailable
 import time
 import json
 from kafka.admin import KafkaAdminClient, NewTopic
+from constants import MESSAGE_CODES
 
 KAFKA_PORT = 9092
 KAFKA_ADDRESS = "192.168.56.103"  # "127.0.0.1"
@@ -17,8 +18,15 @@ producer = KafkaProducer(
 # create and add topic to server
 def add_topic(topic_name):
     producer.send(topic_name, {'info': 'nonsense message.'})    # because I found I always had nodenotready errors initializing kafka admin client, I just make use of auto creation here
-    producer.send(balancer_topic, 
-        {'serverID': 'server123456', 'balanceType': '0', 'topic': topic_name, 'info': 'Add this topic to your active topic list.'})   # inform the server
+    producer.send(
+        balancer_topic, 
+        {
+          'serverID': 'server123456',
+          'message_code': MESSAGE_CODES['ADD_TOPIC'],
+          'topic': topic_name,
+          'info': 'Add this topic to your active topic list.'
+        }
+    )   # inform the server
     time.sleep(1)
     producer.send(topic_name, {'info': 'Now you can receive messages in this channel successfully.'})   # not needed
 

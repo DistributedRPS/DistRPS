@@ -5,6 +5,7 @@ from kafka.errors import NoBrokersAvailable
 import time
 import json
 from threading import Lock
+from constants import MESSAGE_CODES
 
 KAFKA_PORT = 9092
 KAFKA_ADDRESS = "192.168.56.103"  # "127.0.0.1"
@@ -59,13 +60,13 @@ def handle_client_msg(topic, content):
     else:
         print('***Warning: requestType is not accepted in this message', flush=True)
 
-# add some topics
+# Subscribe to a new topic while keeping old subscriptions active
 def add_topic(topics):
     global active_topics
     active_topics_lock.acquire()
     if type(topics) is list:
-        for t in topics:
-            active_topics.add(t)
+        for topic in topics:
+            active_topics.add(topic)
         consumer.subscribe(list(active_topics))
     elif type(topics) is str:
         active_topics.add(topics)
@@ -76,7 +77,7 @@ def add_topic(topics):
     print(active_topics)
     print('Updated subscription: ', consumer.subscription())
 
-# remove one topic(string)
+# Stop listening to the given topic
 def remove_topic(topic):
     global active_topics
     active_topics_lock.acquire()
@@ -87,7 +88,15 @@ def remove_topic(topic):
     send_del2lb(topic)
 
 def send_del2lb(topic):
-    producer.send(balancer_topic, {'serverID': server_id, 'balanceType': '1', 'topic': topic, 'info': 'Please delete this topic'})
+    producer.send(
+      balancer_topic,
+      {
+        'serverID': server_id,
+        'message_code': MESSAGE_CODES['DELETE_TOPIC'],
+        'topic': topic,
+        'info': 'Please delete this topic',
+      }
+    )
 
 # tournament inited and wait for all players
 def init_player_state(topic, client_id):
@@ -185,23 +194,23 @@ def find_winner(topic):
 # parameters arr: [{client_id: string, gesture: string}, ...]
 # return the person who wins, None for tie
 def compare_gesture(arr):
-    d1, d2 = arr[0], arr[1]
-    g1 = d1['gesture']
-    g2 = d2['gesture']
-    if g1 == g2:
+    player_1, player_2 = arr[0], arr[1]
+    player_1_gesture = player_1['gesture']
+    player_2_gesture = player_2['gesture']
+    if player_1_gesture == player_2_gesture:
         return None
-    if g1 == 'rock':
-        if g2 == 'scissor':
-            return d1['client_id']
+    if player_1_gesture == 'rock':
+        if player_2_gesture == 'scissor':
+            return player_1['client_id']
         else:
-            return d2['client_id']
-    elif g1 == 'paper':
-        if g2 == 'rock':
-            return d1['client_id']
+            return player_2['client_id']
+    elif player_1_gesture == 'paper':
+        if player_2_gesture == 'rock':
+            return player_1['client_id']
         else:
-            return d2['client_id']
+            return player_2['client_id']
     else:
-        if g2 == 'rock':
-            return d2['client_id']
+        if player_2_gesture == 'rock':
+            return player_2['client_id']
         else:
-            return d1['client_id']
+            return player_1['client_id']

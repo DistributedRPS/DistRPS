@@ -1,6 +1,7 @@
 # temp script, just for testing out the function of adding topics to server
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
+from constants import MESSAGE_CODES
 import time
 import json
 
@@ -15,7 +16,7 @@ producer = KafkaProducer(
 def recover_topics(topics, serverID):
     producer.send(balancer_topic, {
         'serverID': serverID, 
-        'balanceType': '2', 
+        'message_code': MESSAGE_CODES['SEND_TOPIC_LIST'], 
         'topic': topics, 
         'info': 'A server crashed. Retrieve and serve these topics'})
 
