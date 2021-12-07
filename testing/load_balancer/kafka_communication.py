@@ -97,7 +97,9 @@ class KafkaCommunication:
           return False
 
   def send_message(self, topic, message):
-    self.producer.send(topic, bytes(message, 'utf-8'))
+    message_with_sender_id = message
+    message_with_sender_id['sender_id': 'load_balancer']
+    self.producer.send(topic, bytes(message_with_sender_id, 'utf-8'))
 
   def poll_messages(self):
     return self.consumer.poll()

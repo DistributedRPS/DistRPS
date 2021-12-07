@@ -49,6 +49,10 @@ def message_handler(message):
     heartbeat.receive_heartbeat(message['sender_id'])
     return
 
+  # In case we end up receiving own messages, just disregard them
+  if 'sender_id' in message and message['sender_id'] == 'load_balancer':
+    return
+
   if 'message_code' in message:
     message_code = message['message_code']
     print(f'Received a message with code: {message_code}')
@@ -92,8 +96,8 @@ heartbeat_thread = Thread(
 )
 heartbeat_thread.start()
 
-def add_client(client_address, client_id):
-    clients[f"{client_id}"] = client_address
+# def add_client(client_address, client_id):
+#     clients[f"{client_id}"] = client_address
 
 
 def add_server(server_address, server_id, kafka_topic):
