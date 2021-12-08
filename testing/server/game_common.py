@@ -13,7 +13,7 @@ TOTAL_ROUND = 3  # total rounds per tournament
 producer = None
 consumer = None
 # can be the channel just between this one server and load balancer or shared by all servers, whatever (maybe the former is better)
-balancer_topic = 'balancer-special' # the special topic communicating with load balancer, maybe not needed when it's the same with topic_name
+balancer_topic = '' # the special topic communicating with load balancer, maybe not needed when it's the same with topic_name
 topic_name = '' # (just used to be compatible with the old version codes)
 active_topics = set()
 server_id = 'server-default'
