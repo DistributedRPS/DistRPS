@@ -20,7 +20,7 @@ ENV = environ.get("ENV")
 
 clients = {}
 # Keep track of all servers in the system, and which clients they are serving
-# { <server_id: { "clients": [], "tournaments": None | int } }
+# { <server_id: { "clients": [], "topics": [] } }
 servers = {}
 kafka_topics = [LOAD_BALANCER_KAFKA_TOPIC]
 
@@ -61,7 +61,7 @@ def message_handler(message):
       if 'topic' in message:
         if kafka_admin.delete_topic(message['topic']):
           # Inform that topic successfully deleted?
-          pass
+          return
       else:
         print('Bad "Delete topic" -request: no topic name provided')
         # Send error message back to requester?
@@ -70,7 +70,7 @@ def message_handler(message):
       if 'topic' in message:
         if kafka_admin.create_topic(message['topic']):
           # Send topic name back to requester?
-          pass
+          return
       else:
         print('Bad "Add topic" -request: no topic name provided')
         # Send error message back to requester?
@@ -84,10 +84,30 @@ message_listener_thread = Thread(
 )
 message_listener_thread.start()
 
-def handle_heartbeat_timeout(timeouts):
-  print(f'Servers: {timeouts} have timeouted their heartbeats!')
-  # Find the backups for each timeouted server
-  # Give each backup server the game topics the corresponding crashed server was using
+def handle_heartbeat_timeout(timeouted_servers):
+  print(f'Servers: {timeouted_servers} have timeouted their heartbeats!')
+
+  non_crashed_servers = list(set.difference(set(servers.keys())))
+  if not non_crashed_servers:
+    print('No servers left!')
+    # Make sure the server_ids of the timeouted servers aren't lost. Save
+    # them somewhere so LB can retry this later.
+    return
+
+  for server_id in timeouted_servers:
+    topics = servers[server_id]['topics']
+    # Select a backup server for the game topics of the crashed server
+    backup_server = non_crashed_servers[0]
+    kafka_communicator.send_message(
+      LOAD_BALANCER_KAFKA_TOPIC,
+      {
+        'serverID': backup_server,
+        'message_code': MESSAGE_CODES['MIGRATE_GAME'],
+        'topic': topics,
+        'info': 'A list of topics to use to migrate a game to new server',
+      }
+    )
+    
 
 # Start tracking Server heartbeats and notify on unresponsive servers
 heartbeat_thread = Thread(
@@ -164,7 +184,7 @@ def server_register():
   else:
     print(f'Unable to create topic {server_id}. It might already exist.')
 
-  servers[f"{server_id}"] = { "clients": [], "tournament": None }  
+  servers[f"{server_id}"] = { "clients": [], "topics": [LOAD_BALANCER_KAFKA_TOPIC] }  
   print(f'Server with id {server_id} is up, sending Kafka details...')
 
   return {
