@@ -7,7 +7,6 @@ import time
 import json
 from threading import Lock
 from constants import MESSAGE_CODES
-from server_main import cpu_values_start_server, physical_memory_values_start_server
 
 KAFKA_PORT = 9092
 KAFKA_ADDRESS = "192.168.56.103"  # "127.0.0.1"
@@ -26,7 +25,8 @@ temp_state = {}  # store the player choice temporarily
 active_topics_lock = Lock()
 game_state_lock = Lock()
 temp_state_lock = Lock()
-
+cpu_values_start_server = None
+physical_memory_values_start_server = None
 # create producer & consumer instance
 def init_var():
     global producer, consumer
