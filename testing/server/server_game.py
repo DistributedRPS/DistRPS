@@ -18,10 +18,10 @@ import retrieve_helper
 #   0-want to join
 #   1-player input
 # topic_init can be string or list of string
-def game_service(topic_init, server_id):
+def game_service(topic_init, server_id, kafka_address, kafka_port):
     game_common.topic_name = topic_init
     game_common.server_id = server_id
-    game_common.init_var()
+    game_common.init_var(kafka_address, kafka_port)
     game_common.add_topic(game_common.topic_name)
     print("connected to producer and consumer")
     # no exit point, this service should be always running

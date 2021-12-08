@@ -7,8 +7,7 @@ import json
 from threading import Lock
 from constants import MESSAGE_CODES
 
-KAFKA_PORT = 9092
-KAFKA_ADDRESS = "192.168.56.103"  # "127.0.0.1"
+
 PLAYER_NUM = 2  # the number of players per tournament. Now I assume all players participate in all rounds.
 TOTAL_ROUND = 3  # total rounds per tournament
 producer = None
@@ -26,13 +25,13 @@ game_state_lock = Lock()
 temp_state_lock = Lock()
 
 # create producer & consumer instance
-def init_var():
+def init_var(kafka_address, kafka_port):
     global producer, consumer
     print(f"topic name: {topic_name}", flush=True)
     while producer == None:
         try:
             producer = KafkaProducer(
-                bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"],
+                bootstrap_servers=[f"{kafka_address}:{kafka_port}"],
                 value_serializer=lambda x: json.dumps(x).encode('utf-8')
             )
         except NoBrokersAvailable:
@@ -44,7 +43,7 @@ def init_var():
                 balancer_topic,
                 client_id=server_id,
                 group_id=server_id,
-                bootstrap_servers=[f'{KAFKA_ADDRESS}:{KAFKA_PORT}'],
+                bootstrap_servers=[f'{kafka_address}:{kafka_port}'],
                 value_deserializer=lambda x: json.loads(x.decode('utf-8'))
             )
         except:

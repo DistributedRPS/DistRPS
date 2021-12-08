@@ -63,4 +63,4 @@ except BaseException as error:
   print(f"Error: {error}", flush=True)
 
 
-client_game.game(TOPIC_NAME, client_id)
+client_game.game(TOPIC_NAME, client_id, KAFKA_ADDRESS, KAFKA_PORT)

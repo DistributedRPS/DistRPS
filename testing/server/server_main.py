@@ -70,7 +70,7 @@ except BaseException as error:
     print(f"Error: {error}", flush=True)
   
 
-kafka_communicator.initialize_consumer(KAFKA_ADDRESS, KAFKA_PORT, ["messages"])
+kafka_communicator.initialize_consumer(KAFKA_ADDRESS, KAFKA_PORT, [LOAD_BALANCER_TOPIC])
 kafka_communicator.initialize_producer(KAFKA_ADDRESS, KAFKA_PORT)
 
 kafka_communicator.send_message(LOAD_BALANCER_TOPIC, { "data": "Does this work?" })
@@ -93,4 +93,4 @@ def heartbeat():
 heartbeat_thread = Thread(target=heartbeat)
 heartbeat_thread.start()
 
-server_game.game_service(SERVER_TOPIC, server_id)
+server_game.game_service(SERVER_TOPIC, server_id, KAFKA_ADDRESS, KAFKA_PORT)
