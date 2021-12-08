@@ -188,13 +188,15 @@ def end_tournament(topic):
     usedmemory = physical_memory_values_end.rss - physical_memory_values_start_server.rss
 
     # write results into a file for processing
-    f = open("server" + ".txt", "a")
+    open("server.txt", 'w').close()
+    f = open("server.txt", "a")
     f.write(str(cpuusage))
     f.write(",")
     f.write(str(usedmemory))
     f.write(",")
     f.write("server")
     f.close()
+    print("Bench results inputted")
 
 # find out the winner, still just work for two player right now
 def find_winner(topic):

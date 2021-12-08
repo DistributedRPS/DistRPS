@@ -180,13 +180,15 @@ def server_register():
   usedmemory = physical_memory_values_end.rss - physical_memory_values_start.rss
 
   # write results into a file for processing
-  f = open("load_balancer" + ".txt", "a")
+  open("load_balancer.txt", 'w').close()
+  f = open("load_balancer.txt", "a")
   f.write(str(cpuusage))
   f.write(",")
   f.write(str(usedmemory))
   f.write(",")
   f.write("load_balancer")
   f.close()
+  print("Bench results inputted")
   return {
       "load_balancer_kafka_topic": LOAD_BALANCER_KAFKA_TOPIC,
       "server_kafka_topic": server_id, # Server ID doubles as the topic name
