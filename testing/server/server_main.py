@@ -7,6 +7,7 @@ import time
 import sys
 import server_game
 import uuid
+import psutil
 
 LOAD_BALANCER_TOPIC = "messages"
 SERVER_TOPIC = ""
@@ -33,6 +34,10 @@ print(f"Using {LOAD_BALANCER_ADDRESS} as load balancer address.", flush=True)
 # Fetch Kafka info from the load balancer node
 try:
   print("Fetching a Kafka topic to connect to...", flush=True)
+  global cpu_values_start_server
+  cpu_values_start_server = psutil.cpu_times() #start values for benchmark
+  global physical_memory_values_start_server
+  physical_memory_values_start_server = psutil.Process().memory_info()
   # Add server ID here.
   response = requests.get(
     f"http://{LOAD_BALANCER_ADDRESS}:5000/server/register",

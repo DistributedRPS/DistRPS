@@ -1,4 +1,5 @@
 # common functions for the game (server-side)
+import psutil
 from kafka import KafkaConsumer
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
@@ -6,6 +7,7 @@ import time
 import json
 from threading import Lock
 from constants import MESSAGE_CODES
+from testing.server.server_main import cpu_values_start_server, physical_memory_values_start_server
 
 KAFKA_PORT = 9092
 KAFKA_ADDRESS = "192.168.56.103"  # "127.0.0.1"
@@ -172,6 +174,27 @@ def end_tournament(topic):
     del game_state_dic[topic]
     game_state_lock.release()
     remove_topic(topic)
+
+    cpu_values_end = psutil.cpu_times()  # end values for benchmark
+    physical_memory_values_end = psutil.Process().memory_info()
+
+    # below calculates OS cpu usage and physical memory usage
+    sum1 = sum(list(cpu_values_start_server))
+    sum2 = sum(list(cpu_values_end))
+    diff = sum2 - sum1
+    idlediff = cpu_values_end.idle - cpu_values_start_server.idle
+    iddlepercentage = (idlediff * 100) / diff
+    cpuusage = 100 - iddlepercentage
+    usedmemory = physical_memory_values_end.rss - physical_memory_values_start_server.rss
+
+    # write results into a file for processing
+    f = open("server" + ".txt", "a")
+    f.write(str(cpuusage))
+    f.write(",")
+    f.write(str(usedmemory))
+    f.write(",")
+    f.write("server")
+    f.close()
 
 # find out the winner, still just work for two player right now
 def find_winner(topic):
