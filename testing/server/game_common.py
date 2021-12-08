@@ -7,7 +7,7 @@ import time
 import json
 from threading import Lock
 from constants import MESSAGE_CODES
-from testing.server.server_main import cpu_values_start_server, physical_memory_values_start_server
+from server_main import cpu_values_start_server, physical_memory_values_start_server
 
 KAFKA_PORT = 9092
 KAFKA_ADDRESS = "192.168.56.103"  # "127.0.0.1"
