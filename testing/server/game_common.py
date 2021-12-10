@@ -12,6 +12,8 @@ PLAYER_NUM = 2  # the number of players per tournament. Now I assume all players
 TOTAL_ROUND = 3  # total rounds per tournament
 producer = None
 consumer = None
+KAFKA_ADDRESS = ''
+KAFKA_PORT = ''
 # can be the channel just between this one server and load balancer or shared by all servers, whatever (maybe the former is better)
 balancer_topic = '' # the special topic communicating with load balancer, maybe not needed when it's the same with topic_name
 topic_name = '' # (just used to be compatible with the old version codes)
@@ -24,9 +26,13 @@ active_topics_lock = Lock()
 game_state_lock = Lock()
 temp_state_lock = Lock()
 
+
+
 # create producer & consumer instance
 def init_var(kafka_address, kafka_port):
-    global producer, consumer
+    global producer, consumer, KAFKA_ADDRESS, KAFKA_PORT
+    KAFKA_ADDRESS = kafka_address
+    KAFKA_PORT = kafka_port
     print(f"topic name: {topic_name}", flush=True)
     while producer == None:
         try:
