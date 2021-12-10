@@ -9,7 +9,7 @@ from threading import Lock
 from constants import MESSAGE_CODES
 
 
-PLAYER_NUM = 10  # the number of players per tournament. Now I assume all players participate in all rounds.
+PLAYER_NUM = 2  # the number of players per tournament. Now I assume all players participate in all rounds.
 TOTAL_ROUND = 3  # total rounds per tournament
 producer = None
 consumer = None
