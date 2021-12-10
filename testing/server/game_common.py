@@ -96,7 +96,7 @@ def send_del2lb(topic):
     producer.send(
       balancer_topic,
       {
-        'serverID': server_id,
+        'server_id': server_id,
         'message_code': MESSAGE_CODES['DELETE_TOPIC'],
         'topic': topic,
         'info': 'Please delete this topic',
@@ -106,7 +106,7 @@ def send_del2lb(topic):
 # tournament inited and wait for all players
 def init_player_state(topic, client_id):
     global game_state_dic
-    msg_start = {'serverID': server_id, 'eventType': '0', 'info': "Ok, let's start"}
+    msg_start = {'server_id': server_id, 'eventType': '0', 'info': "Ok, let's start"}
     producer.send(topic, msg_start)
     game_state_lock.acquire()
     if topic in game_state_dic:
@@ -125,7 +125,7 @@ def init_player_state(topic, client_id):
 
 # ask for input
 def request_input(topic):
-    msg_ask = {'serverID': server_id, 'eventType': '1', 'info': 'Give me the input'}
+    msg_ask = {'server_id': server_id, 'eventType': '1', 'info': 'Give me the input'}
     producer.send(topic, msg_ask)
 
 
@@ -146,7 +146,7 @@ def handle_input(topic, client_id, gesture):
         if winner != None:
             game_state_dic[topic][winner] += 1
         # inform clients about update
-        msg_update = {'serverID': server_id, 'eventType': '2',
+        msg_update = {'server_id': server_id, 'eventType': '2',
                       'winner': winner, 'state': game_state_dic[topic],
                       'temp': temp_state[topic],
                       'info': 'update the game state'}
@@ -169,7 +169,7 @@ def round_end(topic):
 # handle the end of tournament
 def end_tournament(topic):
     winner = find_winner(topic)
-    msg_end = {'serverID': server_id, 'eventType': '3', 'info': 'tournament ends',
+    msg_end = {'server_id': server_id, 'eventType': '3', 'info': 'tournament ends',
                'winner': winner, 'state': game_state_dic[topic]}
     producer.send(topic, msg_end)
     # since the message is already sent and tournament ends, delete the record
