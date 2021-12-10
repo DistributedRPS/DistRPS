@@ -38,7 +38,6 @@ if not kafka_admin.connect(KAFKA_ADDRESS, KAFKA_PORT):
         flush=True)
 
 cpu_values_start = psutil.cpu_times() #start values for benchmark
-physical_memory_values_start = psutil.Process().memory_info()
 kafka_communicator.initialize_producer(KAFKA_ADDRESS, KAFKA_PORT)
 kafka_communicator.initialize_consumer(
   KAFKA_ADDRESS, KAFKA_PORT, [f"{LOAD_BALANCER_KAFKA_TOPIC}"]
@@ -139,7 +138,7 @@ def get_free_topic_for_client():
   free_server = None
   
   for server in servers.keys():
-    if len(servers[server]["clients"]) == 1:
+    if len(servers[server]["clients"]) >= 1:
       print(f'Found a server: {server} with other client connected to it!')
       return server
     if len(servers[server]["clients"]) == 0 and free_server == None:
@@ -197,7 +196,7 @@ def server_register():
   idlediff = cpu_values_end.idle - cpu_values_start.idle
   iddlepercentage = (idlediff * 100) / diff
   cpuusage = 100 - iddlepercentage
-  usedmemory = physical_memory_values_end.rss - physical_memory_values_start.rss
+  usedmemory = physical_memory_values_end.rss
 
   # write results into a file for processing
   open("load_balancer.txt", 'w').close()

@@ -9,7 +9,7 @@ from threading import Lock
 from constants import MESSAGE_CODES
 
 
-PLAYER_NUM = 2  # the number of players per tournament. Now I assume all players participate in all rounds.
+PLAYER_NUM = 10  # the number of players per tournament. Now I assume all players participate in all rounds.
 TOTAL_ROUND = 3  # total rounds per tournament
 producer = None
 consumer = None
@@ -25,7 +25,6 @@ active_topics_lock = Lock()
 game_state_lock = Lock()
 temp_state_lock = Lock()
 cpu_values_start_server = None
-physical_memory_values_start_server = None
 # create producer & consumer instance
 def init_var(kafka_address, kafka_port):
     global producer, consumer
@@ -184,7 +183,7 @@ def end_tournament(topic):
     idlediff = cpu_values_end.idle - cpu_values_start_server.idle
     iddlepercentage = (idlediff * 100) / diff
     cpuusage = 100 - iddlepercentage
-    usedmemory = physical_memory_values_end.rss - physical_memory_values_start_server.rss
+    usedmemory = physical_memory_values_end.rss
 
     # write results into a file for processing
     open("server.txt", 'w').close()

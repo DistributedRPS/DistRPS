@@ -32,7 +32,6 @@ print(f"Using {LOAD_BALANCER_ADDRESS} as load balancer address.", flush=True)
 try:
   print("Fetching a Kafka topic to connect to...", flush=True)
   cpu_values_start = psutil.cpu_times() #start values for benchmark
-  physical_memory_values_start = psutil.Process().memory_info()
   response = requests.get(
     f"http://{LOAD_BALANCER_ADDRESS}:5000/client/register",
     params={ "id": client_id },
@@ -78,7 +77,7 @@ diff = sum2 - sum1
 idlediff = cpu_values_end.idle - cpu_values_start.idle
 iddlepercentage = (idlediff * 100) / diff
 cpuusage = 100 - iddlepercentage
-usedmemory = physical_memory_values_end.rss - physical_memory_values_start.rss
+usedmemory = physical_memory_values_end.rss
 
 #write results into a file for processing
 f = open("client_" + str(client_id) +".txt", "a")
