@@ -164,6 +164,27 @@ def client_register():
       }, 404
 
     servers[server_id]["clients"].append(client_id)
+
+    cpu_values_end = psutil.cpu_times()  # end values for benchmark
+    physical_memory_values_end = psutil.Process().memory_info()
+    # below calculates OS cpu usage and physical memory usage
+    sum1 = sum(list(cpu_values_start))
+    sum2 = sum(list(cpu_values_end))
+    diff = sum2 - sum1
+    idlediff = cpu_values_end.idle - cpu_values_start.idle
+    iddlepercentage = (idlediff * 100) / diff
+    cpuusage = 100 - iddlepercentage
+    usedmemory = physical_memory_values_end.rss
+
+    # write results into a file for processing
+    open("load_balancer.txt", 'w').close()
+    f = open("load_balancer.txt", "a")
+    f.write(str(cpuusage))
+    f.write(",")
+    f.write(str(usedmemory))
+    f.write(",")
+    f.write("load_balancer")
+    f.close()
     return {
         "kafka_topic": server_id, # Server ID doubles as the topic name
         "kafka_address": KAFKA_ADDRESS,
@@ -187,27 +208,7 @@ def server_register():
   servers[f"{server_id}"] = { "clients": [], "topics": [LOAD_BALANCER_KAFKA_TOPIC] }  
   print(f'Server with id {server_id} is up, sending Kafka details...')
 
-  cpu_values_end = psutil.cpu_times()  # end values for benchmark
-  physical_memory_values_end = psutil.Process().memory_info()
-  # below calculates OS cpu usage and physical memory usage
-  sum1 = sum(list(cpu_values_start))
-  sum2 = sum(list(cpu_values_end))
-  diff = sum2 - sum1
-  idlediff = cpu_values_end.idle - cpu_values_start.idle
-  iddlepercentage = (idlediff * 100) / diff
-  cpuusage = 100 - iddlepercentage
-  usedmemory = physical_memory_values_end.rss
 
-  # write results into a file for processing
-  open("load_balancer.txt", 'w').close()
-  f = open("load_balancer.txt", "a")
-  f.write(str(cpuusage))
-  f.write(",")
-  f.write(str(usedmemory))
-  f.write(",")
-  f.write("load_balancer")
-  f.close()
-  print("Bench results inputted")
   return {
       "load_balancer_kafka_topic": LOAD_BALANCER_KAFKA_TOPIC,
       "server_kafka_topic": server_id, # Server ID doubles as the topic name
