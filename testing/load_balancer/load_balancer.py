@@ -143,19 +143,22 @@ def get_free_topic_for_client(client_id):
   for server in servers.keys():
     # Find a server with an odd number of clients if available
     if len(servers[server]["clients"]) % 2 == 1:
+      print('Found a server with a client waiting for match!')
       # Find the topic with just one client within that server
       for topic in servers[server]['topics']:
         if len(servers[server]['topics'][topic]) == 1:
-          print(f'Found a server: {server} with topic: {topic} with one other client connected to it!')
+          print(f'Found topic: {topic} with one other client connected to it on the server!')
           servers[server]['topics'][topic].append(client_id)
+          servers[server]['clients'].append(client_id)
           return topic
 
+  print('Unable to find a free game... Creating a new one...')
   # We did not find a server with a 'ready' topic.
   # So we create a new topic, give that to a random server, and give that topic
   # to the client.
   free_topic = str(uuid.uuid4())
   if not kafka_admin.create_topic(free_topic):
-    print('Unable to create the new topic!')
+    print('Unable to create a new topic for the game!')
 
   selected_server = random.choice(list(servers.keys()))
   servers[selected_server]['topics'][free_topic] = [client_id,]
