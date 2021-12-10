@@ -41,7 +41,7 @@ def game_service(topic_init, server_id, kafka_address, kafka_port):
         #print(f'***LOG: {server_id} receive {content}', flush=True)
         # handle messages from the load balancer
         if topic == game_common.balancer_topic:
-            handle_balancer_msg(content)
+            handle_balancer_msg(content, kafka_address, kafka_port)
         # handle messages from clients (players)
         elif 'requestType' in content:
             game_common.handle_client_msg(topic, content)
@@ -51,7 +51,7 @@ def game_service(topic_init, server_id, kafka_address, kafka_port):
 #   0-add topic(s), {'serverID': '0', 'message_code': 0, 'topic': [] or str, ...} load balancer->server
 #   1-remove one topic, {'serverID': '', 'message_code': '1', 'topic': '', ...} server->load balancer
 #   2-retrieve and serve these topics, {'serverID': '', 'message_code': '2', 'topic': [], ...} load balancer->server
-def handle_balancer_msg(content):
+def handle_balancer_msg(content, kafka_address='', kafka_port=''):
     if 'message_code' not in content:
         return
     message_code = content['message_code']
@@ -68,7 +68,7 @@ def handle_balancer_msg(content):
         if 'topic' in content:
             topics = content['topic']
             if type(topics) is list:
-                retrieve_thread=Thread(target=retrieve_helper.retrieve_states, args=(topics))
+                retrieve_thread=Thread(target=retrieve_helper.retrieve_states, args=(topics, kafka_address, kafka_port))
                 retrieve_thread.start()
             else:
                 print('***Warning: arg topic should be a list', flush=True)

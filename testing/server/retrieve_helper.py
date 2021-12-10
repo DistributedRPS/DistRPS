@@ -6,8 +6,8 @@ import game_common
 recover_consumer = None
 
 # just run this function as a thread
-def retrieve_states(topics):
-    init_var(topics)
+def retrieve_states(topics, kafka_address, kafka_port):
+    init_var(topics, kafka_address, kafka_port)
     all_messages, situation = recover_states()
     # subscribe first
     game_common.add_topic(list(situation.keys()))
@@ -15,7 +15,7 @@ def retrieve_states(topics):
     handle_left_msg(all_messages, situation)
 
 # create consumer instance
-def init_var(topics):
+def init_var(topics, kafka_address, kafka_port):
     global recover_consumer
     print(f"topic name: {topics}", flush=True)
     while recover_consumer == None:
@@ -24,7 +24,7 @@ def init_var(topics):
             recover_consumer = KafkaConsumer(
                 client_id=uniq,
                 group_id=uniq,
-                bootstrap_servers=[f'{game_common.KAFKA_ADDRESS}:{game_common.KAFKA_PORT}'],
+                bootstrap_servers=[f'{kafka_address}:{kafka_port}'],
                 value_deserializer=lambda x: json.loads(x.decode('utf-8')),
                 auto_offset_reset='earliest'    # get all history
             )
