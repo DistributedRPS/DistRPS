@@ -28,7 +28,7 @@ After activating the venv, when you are done with running the apps, you can deac
 
      deactivate
      
-To install the dependencies, run:
+To install the dependencies in a client, go to client folder and run:
      
      pip3 install -r requirements.txt
 
