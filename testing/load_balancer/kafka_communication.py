@@ -63,7 +63,8 @@ class KafkaCommunication:
     while self.producer == None and retries <= 10:
       try:
         self.producer = KafkaProducer(
-          bootstrap_servers=[f"{kafka_address}:{kafka_port}"]
+          bootstrap_servers=[f"{kafka_address}:{kafka_port}"],
+          value_serializer=lambda message: json.dumps(message).encode('utf-8')
         )
         return True
       except NoBrokersAvailable:
@@ -81,7 +82,7 @@ class KafkaCommunication:
       try:
         self.consumer = KafkaConsumer(
           bootstrap_servers=[f"{kafka_address}:{kafka_port}"],
-          value_deserializer = lambda x: json.loads(x.decode('utf-8'))
+          value_deserializer = lambda message: json.loads(message.decode('utf-8'))
         )
         if topic_regex:
           self.consumer.subscribe(pattern=topic_regex)
@@ -98,8 +99,8 @@ class KafkaCommunication:
 
   def send_message(self, topic, message):
     message_with_sender_id = message
-    message_with_sender_id['sender_id': 'load_balancer']
-    self.producer.send(topic, bytes(message_with_sender_id, 'utf-8'))
+    message_with_sender_id['sender_id'] = 'load_balancer'
+    self.producer.send(topic, message_with_sender_id)
 
   def poll_messages(self):
     return self.consumer.poll()

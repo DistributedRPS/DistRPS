@@ -48,14 +48,14 @@ def game_service(topic_init, server_id, kafka_address, kafka_port):
 
 # handle the messages from the load balancer
 # 'message_code' difinition (load balancer<-> server):
-#   0-add topic(s), {'serverID': '0', 'message_code': 0, 'topic': [] or str, ...} load balancer->server
-#   1-remove one topic, {'serverID': '', 'message_code': '1', 'topic': '', ...} server->load balancer
-#   2-retrieve and serve these topics, {'serverID': '', 'message_code': '2', 'topic': [], ...} load balancer->server
+#   0-add topic(s), {'server_id': '0', 'message_code': 0, 'topic': [] or str, ...} load balancer->server
+#   1-remove one topic, {'server_id': '', 'message_code': '1', 'topic': '', ...} server->load balancer
+#   2-retrieve and serve these topics, {'server_id': '', 'message_code': '2', 'topic': [], ...} load balancer->server
 def handle_balancer_msg(content):
     if 'message_code' not in content:
         return
     message_code = content['message_code']
-    if 'serverID' not in content or content['serverID'] != game_common.server_id:  # make sure the message is sent to me
+    if 'server_id' not in content or content['server_id'] != game_common.server_id:  # make sure the message is sent to me
         return
     if message_code == MESSAGE_CODES['ADD_TOPIC']:
             if 'topic' in content:
