@@ -7,8 +7,6 @@ import time
 import json
 
 
-KAFKA_PORT = 9092
-KAFKA_ADDRESS = "192.168.56.103" #"127.0.0.1"
 producer = None
 consumer = None
 # Note: all messages in this topic must be encoded in json format!
@@ -18,12 +16,12 @@ game_state = {} # {clientID1: score, ...}
 rps = {'0': 'rock', '1': 'paper', '2': 'scissor'}
 
 # create producer & consumer instance
-def init_var():
+def init_var(kafka_address, kafka_port):
     global producer, consumer
     while producer == None:
         try:
             producer = KafkaProducer(
-            bootstrap_servers=[f"{KAFKA_ADDRESS}:{KAFKA_PORT}"],
+            bootstrap_servers=[f"{kafka_address}:{kafka_port}"],
             value_serializer = lambda x: json.dumps(x).encode('utf-8')
             )
         except NoBrokersAvailable:
@@ -35,7 +33,7 @@ def init_var():
               topic_name,
               client_id = client_id,
               group_id = client_id, 
-              bootstrap_servers = [f'{KAFKA_ADDRESS}:{KAFKA_PORT}'],
+              bootstrap_servers = [f'{kafka_address}:{kafka_port}'],
               value_deserializer = lambda x: json.loads(x.decode('utf-8')),
             )
         except:
@@ -43,12 +41,12 @@ def init_var():
             time.sleep(1)
 
 # the game itself (3 rounds 2 players tournament)
-def game(topic, id):
+def game(topic, id, kafka_address, kafka_port):
     global topic_name
     topic_name = topic
     global client_id
     client_id = id
-    init_var()
+    init_var(kafka_address, kafka_port)
     consumer.poll() # start consuming now, may take some time
     join_tournament()
     print('start game loop', flush=True)

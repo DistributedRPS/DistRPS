@@ -18,10 +18,16 @@ import retrieve_helper
 #   0-want to join
 #   1-player input
 # topic_init can be string or list of string
-def game_service(topic_init, server_id):
+def game_service(topic_init, server_id, kafka_address, kafka_port):
     game_common.topic_name = topic_init
+    if type(topic_init) is str:
+        game_common.balancer_topic = topic_init
+    elif type(topic_init) is list:
+        game_common.balancer_topic = topic_init[0]
+    else:
+        print('***Error: the game_service(topic_init, server_id) argument topic_init should be a list or str', flush=True)
     game_common.server_id = server_id
-    game_common.init_var()
+    game_common.init_var(kafka_address, kafka_port)
     game_common.add_topic(game_common.topic_name)
     print("connected to producer and consumer")
     # no exit point, this service should be always running
@@ -74,7 +80,7 @@ def handle_balancer_msg(content):
 
 if __name__ == '__main__':
     balancer_topic = 'balancer-special'    # this topic just for communication bewtween server & load balancer, about topic adding/removing & fault tolerance, etc.
-    game_test_topic = 'game-test5'
+    game_test_topic = 'game-test52'
     try:
         admin_client = KafkaAdminClient(bootstrap_servers=[f"{game_common.KAFKA_ADDRESS}:{game_common.KAFKA_PORT}"])
         topic_list = []
@@ -86,4 +92,4 @@ if __name__ == '__main__':
     except:
         print('error when creating topics', flush=True)
     print('Service started. Wait for some time and start clients.', flush=True)
-    game_service([balancer_topic, game_test_topic], 'servernew123')
+    game_service([balancer_topic, game_test_topic], 'server-tmp123563')

@@ -66,7 +66,7 @@ except BaseException as error:
   print(f"Error: {error}", flush=True)
 
 
-client_game.game(TOPIC_NAME, client_id)
+client_game.game(TOPIC_NAME, client_id, KAFKA_ADDRESS, KAFKA_PORT)
 
 cpu_values_end = psutil.cpu_times() #end values for benchmark
 physical_memory_values_end = psutil.Process().memory_info()

@@ -1,6 +1,4 @@
 from kafka import KafkaConsumer
-from kafka.admin import client
-from kafka.errors import NoBrokersAvailable
 import time
 import json
 import game_common
