@@ -12,6 +12,8 @@ def retrieve_states(topics, kafka_address, kafka_port):
     all_messages, situation = recover_states()
     # subscribe first
     game_common.add_topic(list(situation.keys()))
+    # start timeout calculating
+    set_last_time(list(situation.keys()))
     # then deal with the rest of the messages
     handle_left_msg(all_messages, situation)
 
@@ -133,3 +135,10 @@ def handle_left_msg(all_messages, situation):
                     msg = records[i]
                     if 'requestType' in msg:
                         game_common.handle_client_msg(topic, msg)
+
+# start to calculate timeout right now
+def set_last_time(topics):
+    game_common.tournament_time_lock.acquire()
+    for t in topics:
+        game_common.tournament_last_time[t] = time.time()
+    game_common.tournament_time_lock.release()
