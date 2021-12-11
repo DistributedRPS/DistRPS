@@ -2,6 +2,7 @@ from kafka import KafkaConsumer
 import time
 import json
 import game_common
+from constants import EVENT_TYPES
 
 recover_consumer = None
 
@@ -80,12 +81,12 @@ def analyze_messages(topic, records):
     # deal with different cases
     if last_msg == None:    # no game state at all
         return (0, 0)
-    elif last_msg['eventType'] == '0':  # tournament just started (maybe still waiting for clients)
+    elif last_msg['eventType'] == EVENT_TYPES['TOURNAMENT_START']:  # tournament just started (maybe still waiting for clients)
         return (0, 0)
-    elif last_msg['eventType'] == '1':  # server asked for input
+    elif last_msg['eventType'] == EVENT_TYPES['REQUEST_INPUT']:  # server asked for input
         # check if its round
         previous = records[last_ind - 1]
-        if 'eventType' in previous and previous['eventType'] == '2':
+        if 'eventType' in previous and previous['eventType'] == EVENT_TYPES['STATE_UPDATE']:
             game_common.game_state_lock.acquire()
             game_common.game_state_dic[topic] = previous['state']
             game_common.game_state_lock.release()
@@ -97,13 +98,13 @@ def analyze_messages(topic, records):
             game_common.game_state_dic[topic] = tmp
             game_common.game_state_lock.release()
         return (1, last_ind+1)
-    elif last_msg['eventType'] == '2':  # just updated
+    elif last_msg['eventType'] == EVENT_TYPES['STATE_UPDATE']:  # just updated
         # directly fetch game states
         game_common.game_state_lock.acquire()
         game_common.game_state_dic[topic] = last_msg['state']
         game_common.game_state_lock.release()
         return (2, last_ind+1)
-    elif last_msg['eventType'] == '3':  # just ended
+    elif last_msg['eventType'] == EVENT_TYPES['TOURNAMENT_END'] or last_msg['eventType'] == EVENT_TYPES['TOURNAMENT_TIMEOUT']:  # just ended
         game_common.send_del2lb(topic)
         return (3, len(records))
     else:
@@ -132,7 +133,3 @@ def handle_left_msg(all_messages, situation):
                     msg = records[i]
                     if 'requestType' in msg:
                         game_common.handle_client_msg(topic, msg)
-
-
-# if __name__ == '__main__':
-#     retrieve_states(['game-test'])
