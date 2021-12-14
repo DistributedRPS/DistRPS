@@ -13,15 +13,15 @@ producer = KafkaProducer(
     value_serializer=lambda x: json.dumps(x).encode('utf-8')
 )
 
-def recover_topics(topics, serverID):
+def recover_topics(topics, server_id):
     producer.send(balancer_topic, {
-        'serverID': serverID, 
+        'server_id': server_id, 
         'message_code': MESSAGE_CODES['SEND_TOPIC_LIST'], 
         'topic': topics, 
         'info': 'A server crashed. Retrieve and serve these topics'})
 
 if __name__ == '__main__':
     while True:
-        server = input('Enter serverID: ')
+        server = input('Enter server_id: ')
         s = input('Enter topics to recover (splited by space): ')
         recover_topics(s.split(' '), server)

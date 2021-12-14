@@ -5,6 +5,7 @@ from threading import Thread
 from constants import MESSAGE_CODES
 import game_common
 import retrieve_helper
+import time
 
 # service supporting game loop in client
 # event definition (server->client):
@@ -32,7 +33,8 @@ def game_service(topic_init, server_id, kafka_address, kafka_port):
     print("connected to producer and consumer")
     # no exit point, this service should be always running
     while True:
-        msg = game_common.consumer.poll(timeout_ms=100000, max_records=1)
+        msg = game_common.consumer.poll(timeout_ms=30000, max_records=1)
+        game_common.check_timeout() # check the timeout of tournaments
         if msg == {} or None:
             continue
         for v in msg.values():
@@ -41,21 +43,24 @@ def game_service(topic_init, server_id, kafka_address, kafka_port):
         #print(f'***LOG: {server_id} receive {content}', flush=True)
         # handle messages from the load balancer
         if topic == game_common.balancer_topic:
-            handle_balancer_msg(content)
+            handle_balancer_msg(content, kafka_address, kafka_port)
         # handle messages from clients (players)
         elif 'requestType' in content:
             game_common.handle_client_msg(topic, content)
+            game_common.tournament_time_lock.acquire()
+            game_common.tournament_last_time[topic] = time.time()
+            game_common.tournament_time_lock.release()
 
 # handle the messages from the load balancer
 # 'message_code' difinition (load balancer<-> server):
-#   0-add topic(s), {'serverID': '0', 'message_code': 0, 'topic': [] or str, ...} load balancer->server
-#   1-remove one topic, {'serverID': '', 'message_code': '1', 'topic': '', ...} server->load balancer
-#   2-retrieve and serve these topics, {'serverID': '', 'message_code': '2', 'topic': [], ...} load balancer->server
-def handle_balancer_msg(content):
+#   0-add topic(s), {'server_id': '0', 'message_code': 0, 'topic': [] or str, ...} load balancer->server
+#   1-remove one topic, {'server_id': '', 'message_code': '1', 'topic': '', ...} server->load balancer
+#   2-retrieve and serve these topics, {'server_id': '', 'message_code': '2', 'topic': [], ...} load balancer->server
+def handle_balancer_msg(content, kafka_address='', kafka_port=''):
     if 'message_code' not in content:
         return
     message_code = content['message_code']
-    if 'serverID' not in content or content['serverID'] != game_common.server_id:  # make sure the message is sent to me
+    if 'server_id' not in content or content['server_id'] != game_common.server_id:  # make sure the message is sent to me
         return
     if message_code == MESSAGE_CODES['ADD_TOPIC']:
             if 'topic' in content:
@@ -68,7 +73,7 @@ def handle_balancer_msg(content):
         if 'topic' in content:
             topics = content['topic']
             if type(topics) is list:
-                retrieve_thread=Thread(target=retrieve_helper.retrieve_states, args=(topics))
+                retrieve_thread=Thread(target=retrieve_helper.retrieve_states, args=(topics, kafka_address, kafka_port))
                 retrieve_thread.start()
             else:
                 print('***Warning: arg topic should be a list', flush=True)
@@ -80,7 +85,7 @@ def handle_balancer_msg(content):
 
 if __name__ == '__main__':
     balancer_topic = 'balancer-special'    # this topic just for communication bewtween server & load balancer, about topic adding/removing & fault tolerance, etc.
-    game_test_topic = 'game-test52'
+    game_test_topic = 'game-test80'
     try:
         admin_client = KafkaAdminClient(bootstrap_servers=[f"{game_common.KAFKA_ADDRESS}:{game_common.KAFKA_PORT}"])
         topic_list = []
@@ -92,4 +97,4 @@ if __name__ == '__main__':
     except:
         print('error when creating topics', flush=True)
     print('Service started. Wait for some time and start clients.', flush=True)
-    game_service([balancer_topic, game_test_topic], 'server-tmp123563')
+    game_service([balancer_topic, game_test_topic], 'server-pm456', '192.168.56.103', 9092)

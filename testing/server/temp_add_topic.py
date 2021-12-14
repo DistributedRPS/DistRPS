@@ -21,7 +21,7 @@ def add_topic(topic_name):
     producer.send(
         balancer_topic, 
         {
-          'serverID': 'server123456',
+          'server_id': 'server-pm123',
           'message_code': MESSAGE_CODES['ADD_TOPIC'],
           'topic': topic_name,
           'info': 'Add this topic to your active topic list.'
