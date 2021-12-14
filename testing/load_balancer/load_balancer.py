@@ -8,6 +8,7 @@ from constants import MESSAGE_CODES
 import sys
 import uuid
 import random
+import psutil
 
 app = Flask(__name__)
 
@@ -39,7 +40,7 @@ if not kafka_admin.connect(KAFKA_ADDRESS, KAFKA_PORT):
          f" and port: {KAFKA_PORT}"),
         flush=True)
 
-
+cpu_values_start = psutil.cpu_times() #start values for benchmark
 kafka_communicator.initialize_producer(KAFKA_ADDRESS, KAFKA_PORT)
 kafka_communicator.initialize_consumer(
   KAFKA_ADDRESS, KAFKA_PORT, [f"{LOAD_BALANCER_KAFKA_TOPIC}"]
@@ -193,7 +194,26 @@ def client_register():
         "error": "No available servers found!"
       }, 404
 
-    
+    cpu_values_end = psutil.cpu_times()  # end values for benchmark
+    physical_memory_values_end = psutil.Process().memory_info()
+
+    # below calculates OS cpu usage and physical memory usage
+    sum1 = sum(list(cpu_values_start))
+    sum2 = sum(list(cpu_values_end))
+    diff = sum2 - sum1
+    idlediff = cpu_values_end.idle - cpu_values_start.idle
+    iddlepercentage = (idlediff * 100) / diff
+    cpuusage = 100 - iddlepercentage
+    usedmemory = physical_memory_values_end.rss
+
+    # write results into a file for processing
+    f = open("ld.txt", "a")
+    f.write(str(cpuusage))
+    f.write(",")
+    f.write(str(usedmemory))
+    f.write(",")
+    f.write("load_balancer")
+    f.close()
     return {
         "kafka_topic": topic, # Server ID doubles as the topic name
         "kafka_address": KAFKA_ADDRESS,
