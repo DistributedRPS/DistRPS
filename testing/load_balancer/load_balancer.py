@@ -207,6 +207,7 @@ def client_register():
     usedmemory = physical_memory_values_end.rss
 
     # write results into a file for processing
+    open("ld.txt", 'w').close()
     f = open("ld.txt", "a")
     f.write(str(cpuusage))
     f.write(",")
