@@ -167,7 +167,7 @@ def get_free_topic_for_client(client_id):
 
   print(f'Requesting server to add topic: {free_topic} to its subscriptions')
   kafka_communicator.send_message(
-    selected_server,
+    LOAD_BALANCER_KAFKA_TOPIC,
     {
       'message_code': MESSAGE_CODES['ADD_TOPIC'],
       'topic': free_topic,
