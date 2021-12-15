@@ -106,7 +106,7 @@ def handle_heartbeat_timeout(timeouted_servers):
         {
           'server_id': backup_server,
           'message_code': MESSAGE_CODES['MIGRATE_GAME'],
-          'topic': str(list(topics.keys())),
+          'topic': list(topics.keys()),
           'info': 'A list of topics to use to migrate a game to new server',
         }
       )
@@ -115,7 +115,7 @@ def handle_heartbeat_timeout(timeouted_servers):
 # Start tracking Server heartbeats and notify on unresponsive servers
 heartbeat_thread = Thread(
   target=heartbeat.watch_timeouts,
-  args=(30, handle_heartbeat_timeout)
+  args=(15, handle_heartbeat_timeout)
 )
 heartbeat_thread.start()
 
@@ -170,7 +170,7 @@ def get_free_topic_for_client(client_id):
     LOAD_BALANCER_KAFKA_TOPIC,
     {
       'message_code': MESSAGE_CODES['ADD_TOPIC'],
-      'topic': str(list(free_topic)),
+      'topic': [free_topic],
       'server_id': selected_server,
     }
   )
@@ -216,7 +216,7 @@ def server_register():
 
   # TODO: For now, the LB topic get a list with two 'None' -items so when we are
   # later looking for topics for client games, we won't assign them to the LB topic
-  servers[f"{server_id}"] = { "clients": [], "topics": { LOAD_BALANCER_KAFKA_TOPIC: [None, None] } }  
+  servers[f"{server_id}"] = { "clients": [], "topics": {  } }
   print(f'Server with id {server_id} is up, sending Kafka details...')
 
   return {
