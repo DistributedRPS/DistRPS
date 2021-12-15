@@ -216,7 +216,7 @@ def server_register():
 
   # TODO: For now, the LB topic get a list with two 'None' -items so when we are
   # later looking for topics for client games, we won't assign them to the LB topic
-  servers[f"{server_id}"] = { "clients": [], "topics": { LOAD_BALANCER_KAFKA_TOPIC: [None, None] } }  
+  servers[f"{server_id}"] = { "clients": [], "topics": {  } }
   print(f'Server with id {server_id} is up, sending Kafka details...')
 
   return {
