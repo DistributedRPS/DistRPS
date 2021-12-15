@@ -115,7 +115,7 @@ def handle_heartbeat_timeout(timeouted_servers):
 # Start tracking Server heartbeats and notify on unresponsive servers
 heartbeat_thread = Thread(
   target=heartbeat.watch_timeouts,
-  args=(30, handle_heartbeat_timeout)
+  args=(15, handle_heartbeat_timeout)
 )
 heartbeat_thread.start()
 
