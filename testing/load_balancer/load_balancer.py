@@ -170,7 +170,7 @@ def get_free_topic_for_client(client_id):
     LOAD_BALANCER_KAFKA_TOPIC,
     {
       'message_code': MESSAGE_CODES['ADD_TOPIC'],
-      'topic': list(free_topic),
+      'topic': [free_topic],
       'server_id': selected_server,
     }
   )
