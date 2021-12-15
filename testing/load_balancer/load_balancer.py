@@ -106,7 +106,7 @@ def handle_heartbeat_timeout(timeouted_servers):
         {
           'server_id': backup_server,
           'message_code': MESSAGE_CODES['MIGRATE_GAME'],
-          'topic': str(list(topics.keys())),
+          'topic': list(topics.keys()),
           'info': 'A list of topics to use to migrate a game to new server',
         }
       )
@@ -170,7 +170,7 @@ def get_free_topic_for_client(client_id):
     LOAD_BALANCER_KAFKA_TOPIC,
     {
       'message_code': MESSAGE_CODES['ADD_TOPIC'],
-      'topic': str(list(free_topic)),
+      'topic': list(free_topic),
       'server_id': selected_server,
     }
   )
