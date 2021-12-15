@@ -5,7 +5,8 @@ from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
 import time
 import json
-
+from constants import EVENT_TYPES
+from constants import REQUEST_TYPES
 
 producer = None
 consumer = None
@@ -54,7 +55,7 @@ def game(topic, id, kafka_address, kafka_port):
 
 # join the tournament
 def join_tournament():
-    msg = {'clientID': client_id, 'info': 'I want to join the tournament', 'requestType': '0'}
+    msg = {'clientID': client_id, 'info': 'I want to join the tournament', 'requestType': REQUEST_TYPES['WANT_TO_JOIN']}
     producer.send(topic_name, msg)
     #print(f'***LOG: {msg} sent by {client_id}', flush=True)
 
@@ -71,7 +72,7 @@ def join_tournament():
 #   1-player input
 def game_loop():
     while True:
-        msg = consumer.poll(timeout_ms=100000, max_records=1)
+        msg = consumer.poll(timeout_ms=30000, max_records=1)
         if msg == {} or None:
             continue
         #print(f'***LOG: {msg}', flush=True)
@@ -79,15 +80,17 @@ def game_loop():
             content = v[0].value
         if 'eventType' in content:
             event_type = content['eventType']
-            if event_type == '0':
+            if event_type == EVENT_TYPES['TOURNAMENT_START']:
                 print('Tourament starts! Waiting for other players...', flush=True)
-            elif event_type == '1':
+            elif event_type == EVENT_TYPES['REQUEST_INPUT']:
                 get_input()
-            elif event_type == '2':
+            elif event_type == EVENT_TYPES['STATE_UPDATE']:
                 update_state(content)
-            elif event_type == '3':
+            elif event_type == EVENT_TYPES['TOURNAMENT_END']:
                 show_result(content)
-                # since the game ends, stop receiving messages in this topic. (?)
+                break
+            elif event_type == EVENT_TYPES['TOURNAMENT_TIMEOUT']:
+                print('Tournament timeout. Game ends.', flush=True)
                 break
             else:
                 print('***Warning: eventType is not accepted in this message', flush=True)
@@ -100,7 +103,7 @@ def get_input():
         if player_choice == '0' or player_choice == '1' or player_choice == '2':
             break
         print('Please enter the correct number without any other characters.', flush=True)
-    choice_msg = {'clientID': client_id, 'info': 'update player choice RPS', 'requestType': '1', 'choice': rps[player_choice]}
+    choice_msg = {'clientID': client_id, 'info': 'update player choice RPS', 'requestType': REQUEST_TYPES['PLAYER_INPUT'], 'choice': rps[player_choice]}
     producer.send(topic_name, choice_msg)
     #print(f'***LOG: {choice_msg} sent by {client_id}', flush=True)    
 
@@ -146,4 +149,4 @@ def show_result(content):
     game_state = content['state']
 
 if __name__ == '__main__':
-    game('game-test5', str(time.time()))
+    game('game-test80', str(time.time()), '192.168.56.103', 9092)

@@ -5,11 +5,13 @@ from kafka.errors import NoBrokersAvailable
 import time
 import json
 from threading import Lock
+from constants import EVENT_TYPES
+from constants import REQUEST_TYPES
 from constants import MESSAGE_CODES
-
 
 PLAYER_NUM = 2  # the number of players per tournament. Now I assume all players participate in all rounds.
 TOTAL_ROUND = 3  # total rounds per tournament
+TOURNAMENT_TIME_OUT = 60    # end the tournament if no message in 30s
 producer = None
 consumer = None
 # KAFKA_ADDRESS = ''
@@ -18,14 +20,15 @@ consumer = None
 balancer_topic = '' # the special topic communicating with load balancer, maybe not needed when it's the same with topic_name
 topic_name = '' # (just used to be compatible with the old version codes)
 active_topics = set()
-server_id = 'server-default'
+server_id = ''
 game_state_dic = {}  # key: topic_name(can identity the tournament), value: {client1: score, client2: score, round: num}
 temp_state = {}  # store the player choice temporarily
+tournament_last_time = {}
 
 active_topics_lock = Lock()
 game_state_lock = Lock()
 temp_state_lock = Lock()
-
+tournament_time_lock = Lock()
 
 
 # create producer & consumer instance
@@ -58,9 +61,9 @@ def init_var(kafka_address, kafka_port):
 
 def handle_client_msg(topic, content):
     request_type = content['requestType']
-    if request_type == '0':
+    if request_type == REQUEST_TYPES['WANT_TO_JOIN']:
         init_player_state(topic, content['clientID'])
-    elif request_type == '1':
+    elif request_type == REQUEST_TYPES['PLAYER_INPUT']:
         handle_input(topic, content['clientID'], content['choice'])
     else:
         print('***Warning: requestType is not accepted in this message', flush=True)
@@ -89,6 +92,7 @@ def remove_topic(topic):
     active_topics.remove(topic)
     active_topics_lock.release()
     consumer.subscribe(list(active_topics))
+    print('Updated subscription: ', consumer.subscription())
     # send one message to the load balancer, so it can delete this topic
     send_del2lb(topic)
 
@@ -106,7 +110,7 @@ def send_del2lb(topic):
 # tournament inited and wait for all players
 def init_player_state(topic, client_id):
     global game_state_dic
-    msg_start = {'server_id': server_id, 'eventType': '0', 'info': "Ok, let's start"}
+    msg_start = {'server_id': server_id, 'eventType': EVENT_TYPES['TOURNAMENT_START'], 'info': "Ok, let's start"}
     producer.send(topic, msg_start)
     game_state_lock.acquire()
     if topic in game_state_dic:
@@ -125,9 +129,8 @@ def init_player_state(topic, client_id):
 
 # ask for input
 def request_input(topic):
-    msg_ask = {'server_id': server_id, 'eventType': '1', 'info': 'Give me the input'}
+    msg_ask = {'server_id': server_id, 'eventType': EVENT_TYPES['REQUEST_INPUT'], 'info': 'Give me the input'}
     producer.send(topic, msg_ask)
-
 
 # handle players' input
 def handle_input(topic, client_id, gesture):
@@ -146,7 +149,7 @@ def handle_input(topic, client_id, gesture):
         if winner != None:
             game_state_dic[topic][winner] += 1
         # inform clients about update
-        msg_update = {'server_id': server_id, 'eventType': '2',
+        msg_update = {'server_id': server_id, 'eventType': EVENT_TYPES['STATE_UPDATE'],
                       'winner': winner, 'state': game_state_dic[topic],
                       'temp': temp_state[topic],
                       'info': 'update the game state'}
@@ -169,13 +172,28 @@ def round_end(topic):
 # handle the end of tournament
 def end_tournament(topic):
     winner = find_winner(topic)
-    msg_end = {'server_id': server_id, 'eventType': '3', 'info': 'tournament ends',
+    msg_end = {'server_id': server_id, 'eventType': EVENT_TYPES['TOURNAMENT_END'], 'info': 'tournament ends',
                'winner': winner, 'state': game_state_dic[topic]}
     producer.send(topic, msg_end)
-    # since the message is already sent and tournament ends, delete the record
+    delete_tournament(topic) # since the message is already sent and tournament ends, delete the record
+
+# delete records
+def delete_tournament(topic):
+    global game_state_dic
+    global tournament_last_time
+    global temp_state
     game_state_lock.acquire()
-    del game_state_dic[topic]
+    if topic in game_state_dic:
+        del game_state_dic[topic]
     game_state_lock.release()
+    temp_state_lock.acquire()
+    if topic in temp_state:
+        del temp_state[topic]
+    temp_state_lock.release()
+    tournament_time_lock.acquire()
+    if topic in tournament_last_time:
+        del tournament_last_time[topic]
+    tournament_time_lock.release()
     remove_topic(topic)
 
 # find out the winner, still just work for two player right now
@@ -219,3 +237,20 @@ def compare_gesture(arr):
             return player_2['client_id']
         else:
             return player_1['client_id']
+
+# check tournaments timeout
+def check_timeout():
+    global tournament_last_time
+    topics_to_remove = []
+    tournament_time_lock.acquire()
+    active_topics_lock.acquire()
+    for t in active_topics:
+        if t in tournament_last_time:
+            if tournament_last_time[t] + TOURNAMENT_TIME_OUT <= time.time():
+                topics_to_remove.append(t)
+    tournament_time_lock.release()
+    active_topics_lock.release()
+    for t in topics_to_remove:
+        msg_timeout = {'server_id': server_id, 'eventType': EVENT_TYPES['TOURNAMENT_TIMEOUT'], 'info': 'tournament ends because of timeout'}
+        producer.send(t, msg_timeout)
+        delete_tournament(t)

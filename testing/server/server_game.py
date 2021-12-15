@@ -5,6 +5,7 @@ from threading import Thread
 from constants import MESSAGE_CODES
 import game_common
 import retrieve_helper
+import time
 
 # service supporting game loop in client
 # event definition (server->client):
@@ -32,7 +33,8 @@ def game_service(topic_init, server_id, kafka_address, kafka_port):
     print("connected to producer and consumer")
     # no exit point, this service should be always running
     while True:
-        msg = game_common.consumer.poll(timeout_ms=100000, max_records=1)
+        msg = game_common.consumer.poll(timeout_ms=30000, max_records=1)
+        game_common.check_timeout() # check the timeout of tournaments
         if msg == {} or None:
             continue
         for v in msg.values():
@@ -45,6 +47,9 @@ def game_service(topic_init, server_id, kafka_address, kafka_port):
         # handle messages from clients (players)
         elif 'requestType' in content:
             game_common.handle_client_msg(topic, content)
+            game_common.tournament_time_lock.acquire()
+            game_common.tournament_last_time[topic] = time.time()
+            game_common.tournament_time_lock.release()
 
 # handle the messages from the load balancer
 # 'message_code' difinition (load balancer<-> server):
@@ -80,7 +85,7 @@ def handle_balancer_msg(content, kafka_address='', kafka_port=''):
 
 if __name__ == '__main__':
     balancer_topic = 'balancer-special'    # this topic just for communication bewtween server & load balancer, about topic adding/removing & fault tolerance, etc.
-    game_test_topic = 'game-test52'
+    game_test_topic = 'game-test80'
     try:
         admin_client = KafkaAdminClient(bootstrap_servers=[f"{game_common.KAFKA_ADDRESS}:{game_common.KAFKA_PORT}"])
         topic_list = []
@@ -92,4 +97,4 @@ if __name__ == '__main__':
     except:
         print('error when creating topics', flush=True)
     print('Service started. Wait for some time and start clients.', flush=True)
-    game_service([balancer_topic, game_test_topic], 'server-tmp123563')
+    game_service([balancer_topic, game_test_topic], 'server-pm456', '192.168.56.103', 9092)

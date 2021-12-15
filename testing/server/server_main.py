@@ -93,4 +93,4 @@ def heartbeat():
 heartbeat_thread = Thread(target=heartbeat)
 heartbeat_thread.start()
 
-server_game.game_service(SERVER_TOPIC, server_id, KAFKA_ADDRESS, KAFKA_PORT)
+server_game.game_service(LOAD_BALANCER_TOPIC, server_id, KAFKA_ADDRESS, KAFKA_PORT)
