@@ -115,7 +115,7 @@ Then, run the following:
      flask run --host=0.0.0.0
 The --host variable is the ip address the load balancer will be visible on. In the above example it is set to 0.0.0.0, but if there occur issues feel free to change it to what is suitable for the design of your own networking environment.
 
-### Kafka node and kafka zookeeper
+### Kafka and its kafka zookeeper
 
 The kafka node is assumed to run on the VM called Server with IP address 192.168.56.103.
 Only the load balancer is aware of the IP address of the kafka node, the game servers and clients need to request it from the load balancer.
