@@ -43,7 +43,7 @@ That should start all the containers connected to a default Docker network so th
 
 If the docker-compose.yml fails to start the containers, make sure you have local images of each container, and that they are named as expected by the docker-compose.yml
 
-### Creating local docker images images
+#### Creating local docker images images
 
 Go to each components folder, where the corresponding Dockerfile is located and run:
 
