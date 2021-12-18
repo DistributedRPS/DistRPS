@@ -2,23 +2,18 @@
 A distributed Rock, Paper &amp; Scissors game
 
 
-## Setting up development environment
+## Setting up the environment
 
-### With Docker
+### Using Lubuntu
 
-There is a docker-compose.yml -file located in the "kafka" -folder of the repository.
-In the folder run:
+The components were developed and tested for use on the Lubuntu operating system. Lubuntu is a lightweight form of the more commonly known Ubuntu operating system. More information about Lubuntu and its installation can be found on the following link: https://lubuntu.me/. For our project we made use of Lubuntu 21.10. We gave the virtual machines around 1 gigabyte of RAM and 14 gigabytes of storage space. Two nodes we given a static IP address for use in the development of this project, the Kafka node and the Load Balancer node. The load balancer node is accessible on IP address 192.168.56.101 and the Kafka node is on 192.168.56.103. To manage and launch the virtual machines, we made use of VirtualBox, which can be found here (https://www.virtualbox.org/). 
 
-     docker-compose up -d
+## Installing the depencies
 
-That should start all the containers connected to a default Docker network so that they are visible to each other.
-
-If the docker-compose.yml fails to start the containers, make sure you have local images of each container, and that they are named as expected by the docker-compose.yml
-
-### Without Docker (components running individually on the local machine)
-
+### General depencies
 Make sure you have python3 installed.
 You might need to install the dependencies listed in the requirements.txt -folder.
+If you want to evaluate the project using the Evaluation branch, psutil is an additional requirement. This can be installed using pip3 install psutil.
 If you have trouble with any of these Python commands, you might need to activate the Virtual environment (venv) for the project in question.
 The venv is activated at the root of the node folder (for example, in the 'client' -folder) by running:
 
@@ -31,8 +26,52 @@ After activating the venv, when you are done with running the apps, you can deac
 To install the dependencies in a client, run:
      
      pip3 install -r requirements.txt
+     
+### Installing Kafka
+In our set-up Kafka is expected to be run as a service on the Kafka node. There are two scripts you can use on this repository, one for launching the Kafka and included Zookeeper service, and one for stopping it, more information can be found in the How to run the Components section. It is assumed that Kafka has one broker available for use. There are multiple guides available for installing Kafka online, here is an example guide for installing Kafka as a service on Ubuntu environments (https://tecadmin.net/how-to-install-apache-kafka-on-ubuntu-20-04/).
 
-Each VM has as password 123. It makes uses of Lubuntu, expects around 13 gigs of storage space and 1 gig of RAM.
+### Using Docker (alternative)
+
+For some duration of the project we also used Docker for development. However, we cannot guarantee all of the functionalities when using Docker and recommend users to use the virtual machine environment.
+
+To run the project with Docker there is a docker-compose.yml -file located in the "kafka" -folder of the repository.
+In the folder run:
+
+     docker-compose up -d
+
+That should start all the containers connected to a default Docker network so that they are visible to each other.
+
+If the docker-compose.yml fails to start the containers, make sure you have local images of each container, and that they are named as expected by the docker-compose.yml
+
+### Creating local docker images images
+
+Go to each components folder, where the corresponding Dockerfile is located and run:
+
+     docker build -t <desired name for image> .
+     
+## Running the game logic only with Docker
+
+There are two scripts: client_game.py in client folder and server_game.py in server folder.
+
+```
+docker cp path container_name:/app
+```
+
+Use this copy command to copy the scripts into the containers.
+
+To go into the container command line:
+
+```
+docker exec -it container_name /bin/bash
+```
+
+Run the scripts in different terminal in any nodes with python environment. (consumer or producer, it doesn't matter. Anyway they are different processes.)
+
+First run the server. After several seconds (to wait for it to set up), run the two clients.
+
+
+## How to run the components
+
 #### Client
 
 Use the flags given below as necessary depending on if you are running the load_balancer on the VM,
@@ -79,37 +118,9 @@ Only the load balancer is aware of the IP address of the kafka node, the game se
 To run the kafka and zookeeper services, please run the startKafka.sh script. To check if the kafka service is properly running, try the command sudo systemctl status kafka.
 To stop the kafka and zookeeper service, please run the stopKafka.sh script.
 
-See kafka documentation for more information.
-
-### Creating local images
-
-Go to each components folder, where the corresponding Dockerfile is located and run:
-
-     docker build -t <desired name for image> .
+See the kafka documentation (https://kafka-python.readthedocs.io/en/master/) for more information.
 
 
-
-## Run game logic example
-
-There are two scripts: client_game.py in client folder and server_game.py in server folder.
-
-```
-docker cp path container_name:/app
-```
-
-Use this copy command to copy the scripts into the containers.
-
-To go into the container command line:
-
-```
-docker exec -it container_name /bin/bash
-```
-
-Run the scripts in different terminal in any nodes with python environment. (consumer or producer, it doesn't matter. Anyway they are different processes.)
-
-First run the server. After several seconds (to wait for it to set up), run the two clients.
-
-Right now it doesn't have any fault tolerance, but the basic logic is done. 3 rounds, 2 players.
 ### Briefly try out with support of multiple topics
 
 A special topic "**balancer-special**" is defined. It can be a topic used by the load balancer and one server to communicate or shared by all servers to communicate with the load balancer. (I prefer the former solution) The script *server/temp_add_topic.py* is just a temporary script for testing.
