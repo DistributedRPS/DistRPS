@@ -49,7 +49,7 @@ Go to each components folder, where the corresponding Dockerfile is located and 
 
      docker build -t <desired name for image> .
      
-#### Running the game logic only with Docker
+#### Running only the game logic with Docker
 
 There are two scripts: client_game.py in client folder and server_game.py in server folder.
 
