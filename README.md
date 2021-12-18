@@ -8,9 +8,9 @@ A distributed Rock, Paper &amp; Scissors game
 
 The components were developed and tested for use on the Lubuntu operating system. Lubuntu is a lightweight form of the more commonly known Ubuntu operating system. More information about Lubuntu and its installation can be found on the following link: https://lubuntu.me/. For our project we made use of Lubuntu 21.10. We gave the virtual machines around 1 gigabyte of RAM and 14 gigabytes of storage space. Two nodes we given a static IP address for use in the development of this project, the Kafka node and the Load Balancer node. The load balancer node is accessible on IP address 192.168.56.101 and the Kafka node is on 192.168.56.103. To manage and launch the virtual machines, we made use of VirtualBox, which can be found here (https://www.virtualbox.org/). 
 
-## Installing the depencies
+#### Installing the depencies
 
-### General depencies
+##### General depencies
 Make sure you have python3 installed.
 You might need to install the dependencies listed in the requirements.txt -folder.
 If you want to evaluate the project using the Evaluation branch, psutil is an additional requirement. This can be installed using pip3 install psutil.
@@ -27,7 +27,7 @@ To install the dependencies in a client, run:
      
      pip3 install -r requirements.txt
      
-### Installing Kafka
+##### Installing Kafka
 In our set-up Kafka is expected to be run as a service on the Kafka node. There are two scripts you can use on this repository, one for launching the Kafka and included Zookeeper service, and one for stopping it, more information can be found in the How to run the Components section. It is assumed that Kafka has one broker available for use. There are multiple guides available for installing Kafka online, here is an example guide for installing Kafka as a service on Ubuntu environments (https://tecadmin.net/how-to-install-apache-kafka-on-ubuntu-20-04/).
 
 ### Using Docker (alternative)
@@ -49,7 +49,7 @@ Go to each components folder, where the corresponding Dockerfile is located and 
 
      docker build -t <desired name for image> .
      
-## Running the game logic only with Docker
+#### Running the game logic only with Docker
 
 There are two scripts: client_game.py in client folder and server_game.py in server folder.
 
@@ -72,7 +72,7 @@ First run the server. After several seconds (to wait for it to set up), run the 
 
 ## How to run the components
 
-#### Client
+### Client
 
 Use the flags given below as necessary depending on if you are running the load_balancer on the VM,
 in Docker, or locally.
@@ -82,18 +82,21 @@ run:
      
      python3 client_main.py [ -vm | -docker ]
 
-#### Server
+### Server
+
+Use the flags given below as necessary depending on if you are running the load_balancer on the VM,
+in Docker, or locally.
 
 Go to the server -folder
 run: 
     
      python3 server_main.py [ -vm | -docker ]
 
-#### Load balancer
+### Load balancer
 
 The load balancer is assumed to run on the VM machine called Client with IP address 192.168.56.101. 
 
-When running the load_balancer, the environment variable ENV can be used to determine the address and port of the Kafka instance:
+When running the load_balancer, the environment variable ENV can be used to determine the address and port of the Kafka instance. The options for the environment variables are vm, production, and docker. Below is each variable laid out and explained.
 
 | Value | Use case |
 | -------- | -------- |
@@ -103,15 +106,16 @@ When running the load_balancer, the environment variable ENV can be used to dete
 
 If you are running the Kafka instance on the local machine, you do not need to provide this environment variable.
 
-Go to the load_balancer -folder
-run: 
+To run the load balancer, first go to the load_balancer folder.
+Then, run the following: 
 
      export FLASK_APP=load_balancer.py
      export ENV=<the value from the table above that suits the environment>
     
      flask run --host=0.0.0.0
+The --host variable is the ip address the load balancer will be visible on. In the above example it is set to 0.0.0.0, but if there occur issues feel free to change it to what is suitable for the design of your own networking environment.
 
-#### Kafka node and kafka zookeeper
+### Kafka node and kafka zookeeper
 
 The kafka node is assumed to run on the VM called Server with IP address 192.168.56.103.
 Only the load balancer is aware of the IP address of the kafka node, the game servers and clients need to request it from the load balancer.
@@ -121,7 +125,7 @@ To stop the kafka and zookeeper service, please run the stopKafka.sh script.
 See the kafka documentation (https://kafka-python.readthedocs.io/en/master/) for more information.
 
 
-### Briefly try out with support of multiple topics
+## Testing the project's support of multiple topic
 
 A special topic "**balancer-special**" is defined. It can be a topic used by the load balancer and one server to communicate or shared by all servers to communicate with the load balancer. (I prefer the former solution) The script *server/temp_add_topic.py* is just a temporary script for testing.
 
@@ -130,5 +134,5 @@ To try out the new feature:
 1. Run the *server_game.py* directly.
 2. If you want, run two *client_game.py* and possibly play the game as usual.
 3. Run the *temp_add_topic.py* and enter some unique topic names to add
-4. Choose any one of the new topics you just created, and manually replace the fixed topic name at the bottom of *client_game.py* with it. Then run two *client_game.py* now, and you can see the game also goes well, which means the system now supports adding new topics and playing in those topics.
+4. Choose any one of the new topics you just created, and manually replace the fixed topic name at the bottom of *client_game.py* with it. Then run two *client_game.py*, and you can see the game run as desired. This means the system  supports adding new Kafka topics and using those topics to communicate between game server and game client.
 
