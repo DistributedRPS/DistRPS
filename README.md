@@ -125,14 +125,3 @@ To stop the kafka and zookeeper service, please run the stopKafka.sh script.
 See the kafka documentation (https://kafka-python.readthedocs.io/en/master/) for more information.
 
 
-## Testing the project's support of multiple topic
-
-A special topic "**balancer-special**" is defined. It can be a topic used by the load balancer and one server to communicate or shared by all servers to communicate with the load balancer. (I prefer the former solution) The script *server/temp_add_topic.py* is just a temporary script for testing.
-
-To try out the new feature:
-
-1. Run the *server_game.py* directly.
-2. If you want, run two *client_game.py* and possibly play the game as usual.
-3. Run the *temp_add_topic.py* and enter some unique topic names to add
-4. Choose any one of the new topics you just created, and manually replace the fixed topic name at the bottom of *client_game.py* with it. Then run two *client_game.py*, and you can see the game run as desired. This means the system  supports adding new Kafka topics and using those topics to communicate between game server and game client.
-
