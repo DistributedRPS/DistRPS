@@ -72,6 +72,12 @@ First run the server. After several seconds (to wait for it to set up), run the 
 
 ## How to run the components
 
+The application expects the components to be started in a specific order. Please proceed in the following manner:
+1. Start the Kafka Node.
+2. Start the Load Balancer Node.
+3. Start the Game Server Node.
+4. Start the Client Node.
+
 ### Client
 
 Use the flags given below as necessary depending on if you are running the load_balancer on the VM,
